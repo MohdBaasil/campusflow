@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notifications Hub – College Management System</title>
+  <meta name="description" content="Broadcast notifications and review sent alerts logs." />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .notif-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 1.8fr;
+      gap: 28px;
+    }
+    
+    .student-selector-list {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 8px 12px;
+      background: var(--bg-input);
+      margin-bottom: 14px;
+    }
+    
+    .student-selector-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 13px;
+    }
+    
+    .student-selector-item input {
+      cursor: pointer;
+    }
+    
+    .notif-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 18px;
+      margin-bottom: 12px;
+      transition: var(--transition);
+      position: relative;
+    }
+    
+    .notif-card:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(139,92,246,0.2);
+    }
+    
+    .notif-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .notif-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .notif-card-date {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    
+    .notif-card-body {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    
+    .notif-resend-btn {
+      position: absolute;
+      bottom: 14px;
+      right: 18px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <div class="brand-icon">🏫</div>
+        <div>
+          <div class="brand-name">CMS Portal</div>
+          <div class="brand-sub">Lecturer Console</div>
+        </div>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main Menu</div>
+      <a href="lecturer_dashboard.html" class="nav-item">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="attendance.html" class="nav-item">
+        <span class="nav-icon">📷</span>
+        <span>Take Face Attendance</span>
+      </a>
+      <a href="class_session.html" class="nav-item">
+        <span class="nav-icon">🎥</span>
+        <span>Live Session</span>
+      </a>
+      <a href="internal_marks.html" class="nav-item">
+        <span class="nav-icon">📝</span>
+        <span>Internal Marks</span>
+      </a>
+      <a href="attendance_report.html" class="nav-item">
+        <span class="nav-icon">📈</span>
+        <span>Attendance Report</span>
+      </a>
+      <a href="notifications.html" class="nav-item active">
+        <span class="nav-icon">🔔</span>
+        <span>Notifications</span>
+      </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <button class="btn btn-outline btn-sm" onclick="logout()" style="width:100%;">
+        🚪 Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Notifications & Alerts Hub</h1>
+        <p>Broadcast alerts to students and view email logs.</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="status-badge" style="background: rgba(79,142,247,0.1); border-color: rgba(79,142,247,0.2); color: var(--blue);">
+          <span>Logs: </span>
+          <strong id="stat-total-sent" style="margin-left:4px;">0 sent</strong>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div class="notif-layout">
+        
+        <!-- Left: Send Notification Form -->
+        <div class="card" style="height: fit-content;">
+          <div class="card-header">
+            <h3 class="card-title">📣 Broadcast Custom Alert</h3>
+          </div>
+          <div id="alert-form-msg"></div>
+          
+          <div class="form-group">
+            <label class="form-label" for="select-dept">Target Department</label>
+            <select class="form-control" id="select-dept" onchange="onDeptChange()">
+              <option value="">— Select Department —</option>
+              <option>Computer Science</option>
+              <option>CSE - AIML</option>
+              <option>Electronics Engineering</option>
+              <option>Mechanical Engineering</option>
+              <option>Civil Engineering</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Select Students</label>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px;">
+              <a href="#" onclick="selectAllStudents(true); return false;" style="color: var(--purple); font-weight: 700;">Check All</a>
+              <a href="#" onclick="selectAllStudents(false); return false;" style="color: var(--text-muted);">Uncheck All</a>
+            </div>
+            <div class="student-selector-list" id="student-select-container">
+              <div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px 0;">
+                Select a department first.
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="input-notif-type">Notification Type</label>
+            <select class="form-control" id="input-notif-type">
+              <option value="custom">Custom Notice</option>
+              <option value="low_attendance">Attendance Warning</option>
+              <option value="marks_published">Marks Announcement</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="input-message">Message Body</label>
+            <textarea class="form-control" id="input-message" rows="4" placeholder="Type your announcement or alert message here..." style="resize: none; font-family: inherit;"></textarea>
+          </div>
+          
+          <button class="btn btn-primary" id="btn-send-notif" onclick="sendBroadcast()" style="width: 100%;">
+            ✉️ Broadcast Email Alert
+          </button>
+        </div>
+
+        <!-- Right: Sent Logs Feed -->
+        <div class="card" style="display: flex; flex-direction: column;">
+          <div class="card-header">
+            <h3 class="card-title">📜 Sent Notifications Feed</h3>
+            <div>
+              <select class="form-control form-control-sm" id="filter-notif-type" onchange="loadNotificationsList()" style="padding: 4px 10px; font-size: 12px; width: auto; display: inline-block;">
+                <option value="All">All Types</option>
+                <option value="absence">Absence Alerts</option>
+                <option value="low_attendance">Low Attendance Warnings</option>
+                <option value="marks_published">Marks Published</option>
+                <option value="custom">Custom Alerts</option>
+              </select>
+            </div>
+          </div>
+          
+          <div id="notifications-list-container" style="flex: 1; max-height: 580px; overflow-y: auto; padding-right: 4px;">
+            <!-- Loaded dynamically -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="js/notifications.js"></script>
+<script>
+  // Auth control
+  document.addEventListener('DOMContentLoaded', () => {
+    const userType = localStorage.getItem('user_type');
+    if (userType !== 'lecturer') {
+      window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+    }
+  });
+
+  function logout() {
+    localStorage.clear();
+    window.location.href = 'login.html';
+  }
+</script>
+</body>
+</html>

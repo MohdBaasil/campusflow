@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reports – Smart Attendance System</title>
+  <meta name="description" content="View, filter, and export attendance reports." />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <div class="brand-icon">🎓</div>
+        <div><div class="brand-name">SmartAttend</div><div class="brand-sub">ArcFace Face Recognition</div></div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span>Dashboard</span></a>
+      <div class="nav-section-label">Manage</div>
+      <a href="register.html" class="nav-item"><span class="nav-icon">👤</span><span>Register Student</span></a>
+      <a href="students.html" class="nav-item"><span class="nav-icon">👥</span><span>View Students</span></a>
+      <a href="enroll.html" class="nav-item"><span class="nav-icon">🤳</span><span>Enroll Face</span></a>
+      <a href="reports.html" class="nav-item active"><span class="nav-icon">📋</span><span>Reports</span></a>
+      <div class="nav-section-label">College System</div>
+      <a href="lecturer_dashboard.html" class="nav-item">
+        <span class="nav-icon">👩‍🏫</span><span>Lecturer Portal</span>
+      </a>
+      <a href="class_session.html" class="nav-item">
+        <span class="nav-icon">🎥</span><span>Live Sessions</span>
+      </a>
+      <a href="internal_marks.html" class="nav-item">
+        <span class="nav-icon">📝</span><span>Internal Marks</span>
+      </a>
+      <a href="attendance_report.html" class="nav-item">
+        <span class="nav-icon">📈</span><span>Attendance Reports</span>
+      </a>
+      <a href="notifications.html" class="nav-item">
+        <span class="nav-icon">🔔</span><span>Notifications</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="status-badge"><div class="status-dot"></div><span>Server Online</span></div>
+      <button class="btn btn-outline btn-sm" style="width:100%; margin-top:10px;" 
+              onclick="localStorage.clear(); window.location.href='login.html';">
+        🚪 Logout
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Attendance Reports</h1>
+        <p>Filter, analyze and export attendance data</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-success btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- Filters Card -->
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-header">
+          <div class="card-title">🔍 Filter Records</div>
+          <button class="btn btn-outline btn-sm" onclick="resetFilters()">✕ Reset</button>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:16px; align-items:end;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" for="filter-date">Date</label>
+            <input type="date" class="form-control" id="filter-date" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" for="filter-subject">Subject</label>
+            <select class="form-control" id="filter-subject">
+              <option value="All">All Subjects</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" for="filter-dept">Department</label>
+            <select class="form-control" id="filter-dept">
+              <option value="All">All Departments</option>
+              <option>Computer Science</option>
+              <option>Electronics Engineering</option>
+              <option>Mechanical Engineering</option>
+              <option>Civil Engineering</option>
+              <option>Mathematics</option>
+              <option>Physics</option>
+              <option>Chemistry</option>
+              <option>Management</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="loadRecords()" style="padding:12px 24px;">
+            🔍 Apply
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary Stats -->
+      <div class="stats-grid" style="margin-bottom:24px;">
+        <div class="stat-card purple">
+          <div class="stat-icon purple">📋</div>
+          <div class="stat-value" id="rep-total">0</div>
+          <div class="stat-label">Total Records</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon green">👥</div>
+          <div class="stat-value" id="rep-unique">0</div>
+          <div class="stat-label">Unique Students</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-icon blue">📚</div>
+          <div class="stat-value" id="rep-subjects">0</div>
+          <div class="stat-label">Subjects Covered</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-icon orange">📅</div>
+          <div class="stat-value" id="rep-dates">0</div>
+          <div class="stat-label">Days Recorded</div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-header">
+          <div class="card-title">📊 Attendance by Subject</div>
+        </div>
+        <div class="chart-container" id="subject-chart-wrapper">
+          <canvas id="subject-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Records Table -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 Attendance Records</div>
+          <span id="records-count" class="badge badge-purple">0 records</span>
+        </div>
+        <div class="table-wrapper">
+          <table id="records-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Student</th>
+                <th>Roll No.</th>
+                <th>Department</th>
+                <th>Subject</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Confidence</th>
+              </tr>
+            </thead>
+            <tbody id="records-tbody">
+              <tr><td colspan="9">
+                <div class="empty-state">
+                  <div class="empty-icon">📋</div>
+                  <div class="empty-title">No records found</div>
+                  <div class="empty-sub">Take attendance first, then check back here.</div>
+                </div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<script src="js/reports.js"></script>
+</body>
+</html>

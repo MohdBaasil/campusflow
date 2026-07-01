@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Check-In – Smart Attendance System</title>
+  <meta name="description" content="Secure, face-verified student attendance check-in." />
+  <link rel="stylesheet" href="css/style.css?v=2" />
+  <style>
+    /* Mobile-first and centered card adjustments for student check-in portal */
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      min-height: 100vh;
+    }
+    .student-container {
+      width: 100%;
+      max-width: 460px;
+      margin: 0 auto;
+    }
+    .student-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      box-shadow: var(--shadow-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      position: relative;
+      overflow: hidden;
+    }
+    .student-card::before {
+      content: '';
+      position: absolute;
+      top: -50px; right: -50px;
+      width: 140px; height: 140px;
+      border-radius: 50%;
+      background: rgba(139,92,246,0.15);
+      filter: blur(20px);
+      z-index: 0;
+    }
+    .student-header {
+      text-align: center;
+      margin-bottom: 28px;
+      position: relative;
+      z-index: 1;
+    }
+    .student-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 58px; height: 58px;
+      background: var(--grad-brand);
+      border-radius: var(--radius-md);
+      font-size: 26px;
+      margin-bottom: 16px;
+      box-shadow: var(--glow-purple);
+    }
+    .student-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .student-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .subject-badge {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 6px 14px;
+      background: rgba(168,85,247,0.12);
+      border: 1px solid rgba(168,85,247,0.25);
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--purple);
+    }
+    .screen-view {
+      display: none;
+      position: relative;
+      z-index: 1;
+    }
+    .screen-view.active {
+      display: block;
+      animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .feedback-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      text-align: center;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .feedback-title {
+      font-size: 22px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .feedback-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    .detail-label {
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .detail-value {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+    .camera-box {
+      position: relative;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: #000;
+      border: 1px solid var(--border);
+      aspect-ratio: 4/3;
+      margin-bottom: 20px;
+    }
+    .camera-box video, .camera-box canvas {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+
+<div class="student-container">
+  <div class="student-card">
+    
+    <!-- Shared Header -->
+    <div class="student-header">
+      <div class="student-logo">🎓</div>
+      <div class="student-title">SmartAttend</div>
+      <div class="student-subtitle">Student Attendance Check-In</div>
+      <div class="subject-badge" id="subject-display">Subject: Attendance Session</div>
+    </div>
+
+    <!-- Error Alert Display -->
+    <div id="student-alert"></div>
+
+    <!-- SCREEN 0: CHECKING IN STATUS -->
+    <div class="screen-view active" id="screen-checking">
+      <div style="text-align: center; padding: 20px 0;">
+        <div style="font-size: 48px; margin-bottom: 16px; display: inline-block; animation: spin 2s linear infinite;">🔄</div>
+        <div class="feedback-title" style="color: var(--purple);">Marking Attendance...</div>
+        <div class="feedback-desc" id="checking-msg">Verifying session details and logging your attendance...</div>
+      </div>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+    </div>
+
+    <!-- SCREEN: INVALID OR MISSING LINK -->
+    <div class="screen-view" id="screen-invalid-link">
+      <div class="feedback-icon">⚠️</div>
+      <div class="feedback-title" style="color: var(--orange);">Session QR Required</div>
+      <div class="feedback-desc">
+        To mark your attendance, please scan the active QR Code displayed on the classroom screen.
+      </div>
+      <button class="btn btn-primary" onclick="window.location.href='student_dashboard.html'" style="width: 100%;">
+        🚪 Go to Student Portal
+      </button>
+    </div>
+
+    <!-- SCREEN 1: LOGIN -->
+    <div class="screen-view" id="screen-login">
+      <div class="form-group">
+        <label class="form-label" for="student-roll">Enter Your Roll Number</label>
+        <input class="form-control" type="text" id="student-roll" placeholder="e.g. CS2021002" style="text-transform: uppercase;" />
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+          * Note: Your face must be registered in the system database.
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-login-next" onclick="goToCameraScreen()" style="width: 100%; margin-top: 10px;">
+        Continue to Face Scan →
+      </button>
+    </div>
+
+    <!-- SCREEN 2: CAMERA CAPTURE -->
+    <div class="screen-view" id="screen-camera">
+      <div class="camera-box">
+        <video id="student-video" autoplay muted playsinline></video>
+        <canvas id="student-canvas" style="display: none;"></canvas>
+        <img id="student-uploaded-preview" style="display: none; width: 100%; height: 100%; object-fit: cover;" />
+        <div class="camera-overlay">
+          <div class="scan-line"></div>
+          <div class="camera-corner corner-tl"></div>
+          <div class="camera-corner corner-tr"></div>
+          <div class="camera-corner corner-bl"></div>
+          <div class="camera-corner corner-br"></div>
+        </div>
+        <div class="camera-status" id="student-cam-status">📷 Loading camera...</div>
+      </div>
+      
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button class="btn btn-outline" onclick="flipStudentCamera()" style="flex: 1;">↔ Flip View</button>
+        <button class="btn btn-primary" id="btn-capture" onclick="captureAndVerify()" style="flex: 2;">📸 Capture & Check-In</button>
+      </div>
+
+      <!-- File upload fallback -->
+      <div style="text-align: center; margin-top: 12px;">
+        <span style="font-size: 12px; color: var(--text-muted);">Camera not working? </span>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('student-file-input').click()" style="padding: 4px 8px; font-size: 11px;">Upload Photo File</button>
+        <input type="file" id="student-file-input" accept="image/*" style="display: none;" onchange="handleStudentFileUpload(event)" />
+      </div>
+
+      <button class="btn btn-outline btn-sm" onclick="goToLoginScreen()" style="width: 100%; margin-top: 14px;">
+        ← Back to Login
+      </button>
+    </div>
+
+    <!-- SCREEN 3: SUCCESS FEEDBACK -->
+    <div class="screen-view" id="screen-success">
+      <div class="feedback-icon">✅</div>
+      <div class="feedback-title" style="color: var(--green);">Attendance Marked!</div>
+      <div class="feedback-desc">Your face has been successfully verified and your attendance logged.</div>
+      
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 24px;">
+        <div class="detail-row">
+          <span class="detail-label">Name</span>
+          <span class="detail-value" id="success-name">-</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Roll Number</span>
+          <span class="detail-value" id="success-roll">-</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Subject</span>
+          <span class="detail-value" id="success-subject">-</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Time Marked</span>
+          <span class="detail-value" id="success-time">-</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Match Score</span>
+          <span class="detail-value" id="success-confidence" style="color: var(--cyan);">-</span>
+        </div>
+      </div>
+      <div style="text-align: center; font-size: 12px; color: var(--text-muted);">
+        You can now close this tab. Have a great day!
+      </div>
+    </div>
+
+    <!-- SCREEN 4: FAILURE FEEDBACK -->
+    <div class="screen-view" id="screen-failure">
+      <div class="feedback-icon">❌</div>
+      <div class="feedback-title" style="color: var(--red);">Verification Failed</div>
+      <div class="feedback-desc" id="failure-msg">We couldn't verify your face. Please try again.</div>
+      
+      <button class="btn btn-primary" onclick="retryVerification()" style="width: 100%;">
+        🔄 Try Again
+      </button>
+      <button class="btn btn-outline" onclick="goToLoginScreen()" style="width: 100%; margin-top: 10px;">
+        👤 Change Roll Number
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="js/student.js"></script>
+</body>
+</html>

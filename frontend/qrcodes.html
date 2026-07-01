@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student QR Codes – Smart Attendance System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f0e17;
+      --surface: #1a1825;
+      --card: #221f35;
+      --purple: #8b5cf6;
+      --purple-light: #a78bfa;
+      --cyan: #06b6d4;
+      --text: #f0eef8;
+      --muted: #7c7a9a;
+      --border: rgba(139,92,246,0.18);
+      --grad: linear-gradient(135deg,#8b5cf6,#06b6d4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .topbar-title h1 { font-size: 22px; font-weight: 800; }
+    .topbar-title p  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .topbar-actions  { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      padding: 10px 20px; border-radius: 10px; font-size: 13px;
+      font-weight: 600; cursor: pointer; border: none; transition: all .2s;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn-primary { background: var(--grad); color: #fff; }
+    .btn-primary:hover { opacity: .85; transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent; color: var(--purple-light);
+      border: 1.5px solid var(--border);
+    }
+    .btn-outline:hover { border-color: var(--purple); background: rgba(139,92,246,.08); }
+
+    /* ── Filter bar ── */
+    .filter-bar {
+      padding: 16px 32px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .filter-bar label { font-size: 13px; color: var(--muted); }
+    .filter-bar select, .filter-bar input {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      outline: none;
+      min-width: 180px;
+    }
+    .filter-bar select:focus, .filter-bar input:focus {
+      border-color: var(--purple);
+    }
+    #total-badge {
+      margin-left: auto;
+      background: rgba(139,92,246,.12);
+      color: var(--purple-light);
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ── Grid ── */
+    .qr-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 24px;
+      padding: 32px;
+    }
+
+    /* ── QR Card ── */
+    .qr-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .qr-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(139,92,246,.22);
+    }
+    .qr-card-header {
+      width: 100%;
+      padding: 14px 16px 10px;
+      background: linear-gradient(135deg,rgba(139,92,246,.14),rgba(6,182,212,.07));
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+    .qr-card-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--grad);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 800; color: #fff;
+      margin: 0 auto 8px;
+    }
+    .qr-card-name {
+      font-size: 14px; font-weight: 700; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .qr-card-roll {
+      font-size: 11px; color: var(--purple-light); margin-top: 2px; font-weight: 600;
+    }
+    .qr-card-dept {
+      font-size: 11px; color: var(--muted); margin-top: 2px;
+    }
+    .qr-img-wrap {
+      padding: 18px;
+      background: #fff;
+      margin: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
+    }
+    .qr-img-wrap img {
+      width: 160px; height: 160px;
+      display: block; image-rendering: pixelated;
+    }
+    .qr-card-actions {
+      display: flex; gap: 8px; padding: 0 16px 16px; width: 100%;
+    }
+    .qr-card-actions a, .qr-card-actions button {
+      flex: 1; text-align: center; padding: 8px; border-radius: 8px;
+      font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none;
+      border: none; transition: all .2s;
+    }
+    .btn-dl {
+      background: rgba(139,92,246,.15);
+      color: var(--purple-light);
+      border: 1px solid var(--border) !important;
+    }
+    .btn-dl:hover { background: rgba(139,92,246,.28); }
+    .btn-print {
+      background: rgba(6,182,212,.12);
+      color: var(--cyan);
+      border: 1px solid rgba(6,182,212,.2) !important;
+    }
+    .btn-print:hover { background: rgba(6,182,212,.24); }
+
+    /* Empty / loading */
+    .empty { text-align: center; padding: 80px 24px; color: var(--muted); }
+    .empty-icon { font-size: 52px; margin-bottom: 14px; }
+    .spinner-ring {
+      width: 40px; height: 40px; margin: 0 auto 14px;
+      border: 3px solid var(--border);
+      border-top-color: var(--purple);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Print styles ── */
+    @media print {
+      body { background: #fff; color: #000; }
+      .topbar, .filter-bar { display: none !important; }
+      .qr-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 16px; }
+      .qr-card {
+        border: 1px solid #ccc; border-radius: 12px;
+        break-inside: avoid; page-break-inside: avoid;
+      }
+      .qr-card-header { background: #f0f0f0; }
+      .qr-card-name { color: #000; }
+      .qr-card-roll { color: #6d28d9; }
+      .qr-card-dept { color: #555; }
+      .qr-card-actions { display: none !important; }
+      .qr-img-wrap { margin: 12px; padding: 12px; box-shadow: none; border: 1px solid #eee; }
+      .qr-img-wrap img { width: 140px; height: 140px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <h1>🪪 Student QR Codes</h1>
+    <p>Each student's personal QR card — scan to check in during attendance sessions</p>
+  </div>
+  <div class="topbar-actions">
+    <a href="index.html" class="btn btn-outline">← Dashboard</a>
+    <button class="btn btn-outline" onclick="window.print()">🖨️ Print All</button>
+    <button class="btn btn-primary" onclick="downloadAll()">⬇️ Download All</button>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <label>Filter by department:</label>
+  <select id="dept-filter" onchange="applyFilter()">
+    <option value="">All Departments</option>
+  </select>
+  <label>Search:</label>
+  <input type="text" id="search-box" placeholder="Name or Roll No..." oninput="applyFilter()" />
+  <span id="total-badge">Loading...</span>
+</div>
+
+<div class="qr-grid" id="qr-grid">
+  <div class="empty">
+    <div class="spinner-ring"></div>
+    <div>Loading student QR codes...</div>
+  </div>
+</div>
+
+<script>
+// Auth guard — redirect to login if not staff
+if (localStorage.getItem("user_type") !== "staff") {
+    window.location.href = "login.html";
+}
+
+const API = window.location.protocol === 'file:' ? 'http://127.0.0.1:5000/api' : '/api';
+let allStudents = [];
+
+async function loadStudents() {
+  try {
+    const res = await fetch(`${API}/students`);
+    allStudents = await res.json();
+
+    // Populate dept filter
+    const depts = [...new Set(allStudents.map(s => s.department))].sort();
+    const sel = document.getElementById('dept-filter');
+    depts.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d; opt.textContent = d;
+      sel.appendChild(opt);
+    });
+
+    renderCards(allStudents);
+  } catch (e) {
+    document.getElementById('qr-grid').innerHTML = `
+      <div class="empty" style="grid-column:1/-1;">
+        <div class="empty-icon">❌</div>
+        <div>Cannot connect to server. Make sure the backend is running.</div>
+      </div>`;
+  }
+}
+
+function applyFilter() {
+  const dept   = document.getElementById('dept-filter').value.toLowerCase();
+  const search = document.getElementById('search-box').value.toLowerCase();
+  const filtered = allStudents.filter(s =>
+    (!dept   || s.department.toLowerCase() === dept) &&
+    (!search || s.name.toLowerCase().includes(search) || s.roll_number.toLowerCase().includes(search))
+  );
+  renderCards(filtered);
+}
+
+function renderCards(students) {
+  const grid = document.getElementById('qr-grid');
+  document.getElementById('total-badge').textContent = `${students.length} student${students.length !== 1 ? 's' : ''}`;
+
+  if (!students.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1;">
+      <div class="empty-icon">🔍</div>
+      <div>No students match your filter.</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = students.map(s => {
+    const initials = s.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    const qrUrl    = `${API}/students/${s.id}/qrcode`;
+    const hasFace  = s.face_count > 0;
+    return `
+      <div class="qr-card" id="card-${s.id}">
+        <div class="qr-card-header">
+          <div class="qr-card-avatar">${initials}</div>
+          <div class="qr-card-name" title="${s.name}">${s.name}</div>
+          <div class="qr-card-roll">${s.roll_number}</div>
+          <div class="qr-card-dept">${s.department}</div>
+          ${hasFace
+            ? `<div style="font-size:10px;color:#10b981;margin-top:4px;">✓ Face enrolled</div>`
+            : `<div style="font-size:10px;color:#f87171;margin-top:4px;">⚠ No face photo</div>`}
+        </div>
+        <div class="qr-img-wrap">
+          <img src="${qrUrl}" alt="QR for ${s.name}" id="qr-img-${s.id}"
+               onerror="this.parentElement.innerHTML='<div style=&quot;width:160px;height:160px;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;&quot;>QR not found</div>'" />
+        </div>
+        <div class="qr-card-actions">
+          <a class="btn-dl" href="${qrUrl}" download="QR_${s.roll_number}.png">⬇ Save</a>
+          <button class="btn-print" onclick="printOne(${s.id},'${s.name}','${s.roll_number}')">🖨 Print</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function printOne(id, name, roll) {
+  const img = document.getElementById(`qr-img-${id}`);
+  if (!img) return;
+  const win = window.open('', '_blank', 'width=400,height=520');
+  win.document.write(`
+    <!DOCTYPE html><html><head>
+    <style>
+      body { font-family: Arial, sans-serif; text-align: center; padding: 30px; }
+      img  { width: 220px; height: 220px; border: 1px solid #eee; padding: 8px; border-radius: 8px; }
+      h2   { margin: 14px 0 4px; font-size: 18px; }
+      p    { color: #555; font-size: 13px; margin: 2px 0; }
+      .footer { margin-top: 16px; font-size: 11px; color: #999; }
+    </style></head>
+    <body>
+      <img src="${img.src}" />
+      <h2>${name}</h2>
+      <p style="color:#6d28d9;font-weight:700;">${roll}</p>
+      <div class="footer">Smart Attendance System — scan this QR to mark attendance</div>
+      <script>window.onload=()=>{window.print();window.close();}<\/script>
+    </body></html>`);
+  win.document.close();
+}
+
+function downloadAll() {
+  const visible = allStudents.filter(s => {
+    const card = document.getElementById(`card-${s.id}`);
+    return card && card.offsetParent !== null;
+  });
+  if (!visible.length) return;
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i >= visible.length) { clearInterval(interval); return; }
+    const s = visible[i++];
+    const a = document.createElement('a');
+    a.href     = `${API}/students/${s.id}/qrcode`;
+    a.download = `QR_${s.roll_number}_${s.name.replace(/\s+/g,'_')}.png`;
+    a.click();
+  }, 500);
+}
+
+loadStudents();
+</script>
+</body>
+</html>

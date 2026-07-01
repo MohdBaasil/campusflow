@@ -1,0 +1,21 @@
+# Virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Local database, uploads, face embeddings, logs, and qrcodes
+data/
+backend/data/
+certs/
+*.db
+*.log
+
+# Secrets and environment configurations
+.env
+.flaskenv
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store

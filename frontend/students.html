@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Students – Smart Attendance System</title>
+  <meta name="description" content="View and manage all registered students in the Smart Attendance System." />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ── Students-page specific styles ── */
+    .students-toolbar {
+      display: flex; align-items: center; gap: 14px;
+      flex-wrap: wrap; margin-bottom: 24px;
+    }
+    .search-box {
+      flex: 1; min-width: 220px; position: relative;
+    }
+    .search-box input {
+      width: 100%; padding: 11px 16px 11px 42px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 14px;
+      color: var(--text-primary); font-family: inherit;
+      transition: var(--transition); outline: none;
+    }
+    .search-box input:focus {
+      border-color: var(--purple);
+      background: rgba(139,92,246,0.06);
+      box-shadow: 0 0 0 3px rgba(139,92,246,0.15);
+    }
+    .search-box input::placeholder { color: var(--text-muted); }
+    .search-box .search-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 16px; pointer-events: none; opacity: 0.5;
+    }
+
+    .student-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 20px;
+    }
+
+    .student-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      transition: var(--transition);
+      cursor: pointer;
+      position: relative; overflow: hidden;
+    }
+    .student-card::after {
+      content: ''; position: absolute;
+      top: -30px; right: -30px;
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      background: var(--purple);
+      opacity: 0.06;
+      transition: var(--transition);
+    }
+    .student-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(139,92,246,0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.4), var(--glow-purple);
+    }
+    .student-card:hover::after { opacity: 0.12; }
+
+    .student-card-header {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 16px;
+    }
+    .student-avatar {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      background: var(--grad-brand);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 900; color: #fff;
+      flex-shrink: 0;
+      box-shadow: 0 0 18px rgba(139,92,246,0.3);
+      overflow: hidden;
+    }
+    .student-avatar img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .student-card-name {
+      font-size: 15px; font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+    .student-card-roll {
+      font-size: 12px; color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .student-card-meta {
+      display: flex; gap: 10px; flex-wrap: wrap;
+    }
+    .student-meta-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 11px; font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .student-meta-tag .tag-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .tag-dot.purple { background: var(--purple); box-shadow: 0 0 6px var(--purple); }
+    .tag-dot.green  { background: var(--green);  box-shadow: 0 0 6px var(--green); }
+    .tag-dot.blue   { background: var(--blue);   box-shadow: 0 0 6px var(--blue); }
+    .tag-dot.orange { background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+
+    /* ── Modal overlay ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(7,6,15,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 500;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.open {
+      opacity: 1; pointer-events: auto;
+    }
+    .modal-dialog {
+      background: var(--bg-secondary);
+      border: 1px solid rgba(139,92,246,0.2);
+      border-radius: var(--radius-xl);
+      width: 680px; max-width: 95vw; max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.7), 0 0 60px rgba(139,92,246,0.15);
+      animation: modal-in 0.35s ease;
+    }
+    @keyframes modal-in {
+      from { transform: scale(0.92) translateY(20px); opacity: 0; }
+      to   { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 24px 28px 0;
+    }
+    .modal-close {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: var(--transition);
+    }
+    .modal-close:hover {
+      background: rgba(239,68,68,0.15);
+      border-color: rgba(239,68,68,0.3);
+      color: var(--red);
+    }
+    .modal-body { padding: 24px 28px 28px; }
+
+    .detail-header {
+      display: flex; gap: 20px; align-items: center;
+      margin-bottom: 24px;
+    }
+    .detail-avatar {
+      width: 72px; height: 72px;
+      border-radius: 18px;
+      background: var(--grad-brand);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; font-weight: 900; color: #fff;
+      flex-shrink: 0;
+      box-shadow: 0 0 24px rgba(139,92,246,0.35);
+      overflow: hidden;
+    }
+    .detail-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .detail-name { font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
+    .detail-roll { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+    .detail-stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .detail-stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+    }
+    .detail-stat-val {
+      font-size: 26px; font-weight: 900;
+      color: var(--text-primary); line-height: 1;
+    }
+    .detail-stat-label {
+      font-size: 10px; font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-top: 6px;
+    }
+
+    .detail-section-title {
+      font-size: 13px; font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .detail-actions {
+      display: flex; gap: 10px; margin-top: 18px;
+    }
+
+    /* counter badge */
+    .count-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 28px; height: 22px; padding: 0 8px;
+      border-radius: 100px;
+      background: rgba(139,92,246,0.15);
+      border: 1px solid rgba(139,92,246,0.25);
+      font-size: 11px; font-weight: 800;
+      color: var(--purple);
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <div class="brand-icon">🎓</div>
+        <div>
+          <div class="brand-name">SmartAttend</div>
+          <div class="brand-sub">ArcFace Face Recognition</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a href="index.html" class="nav-item" id="nav-dashboard">
+        <span class="nav-icon">📊</span><span>Dashboard</span>
+      </a>
+      <div class="nav-section-label">Manage</div>
+      <a href="register.html" class="nav-item">
+        <span class="nav-icon">👤</span><span>Register Student</span>
+      </a>
+      <a href="students.html" class="nav-item active" id="nav-students">
+        <span class="nav-icon">👥</span><span>View Students</span>
+      </a>
+      <a href="enroll.html" class="nav-item">
+        <span class="nav-icon">🤳</span><span>Enroll Face</span>
+      </a>
+      <a href="reports.html" class="nav-item">
+        <span class="nav-icon">📋</span><span>Reports</span>
+      </a>
+      <div class="nav-section-label">College System</div>
+      <a href="lecturer_dashboard.html" class="nav-item">
+        <span class="nav-icon">👩‍🏫</span><span>Lecturer Portal</span>
+      </a>
+      <a href="class_session.html" class="nav-item">
+        <span class="nav-icon">🎥</span><span>Live Sessions</span>
+      </a>
+      <a href="internal_marks.html" class="nav-item">
+        <span class="nav-icon">📝</span><span>Internal Marks</span>
+      </a>
+      <a href="attendance_report.html" class="nav-item">
+        <span class="nav-icon">📈</span><span>Attendance Reports</span>
+      </a>
+      <a href="notifications.html" class="nav-item">
+        <span class="nav-icon">🔔</span><span>Notifications</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="status-badge">
+        <div class="status-dot"></div>
+        <span id="server-status">Server Online</span>
+      </div>
+      <button class="btn btn-outline btn-sm" style="width:100%; margin-top:10px;" 
+              onclick="localStorage.clear(); window.location.href='login.html';">
+        🚪 Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Registered Students</h1>
+        <p id="topbar-date">Loading...</p>
+      </div>
+      <div class="topbar-actions">
+        <a href="register.html" class="btn btn-primary btn-sm">
+          ➕ Register New
+        </a>
+        <button class="btn btn-outline btn-sm" id="export-students-btn" onclick="exportStudents()">
+          📥 Export CSV
+        </button>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- Toolbar: search + filter -->
+      <div class="students-toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" placeholder="Search by name, roll number, or department..." autocomplete="off" />
+        </div>
+        <select class="form-control" id="dept-filter" style="width:200px; flex:none;">
+          <option value="All">All Departments</option>
+        </select>
+        <select class="form-control" id="face-filter" style="width:180px; flex:none;">
+          <option value="All">All Statuses</option>
+          <option value="enrolled">Face Enrolled</option>
+          <option value="missing">No Face Photos</option>
+        </select>
+      </div>
+
+      <!-- Summary -->
+      <div class="stats-grid" style="margin-bottom:24px;">
+        <div class="stat-card purple">
+          <div class="stat-icon purple">👥</div>
+          <div class="stat-value" id="stat-total">–</div>
+          <div class="stat-label">Total Students</div>
+          <div class="stat-sub">Registered in system</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon green">✅</div>
+          <div class="stat-value" id="stat-enrolled">–</div>
+          <div class="stat-label">Faces Enrolled</div>
+          <div class="stat-sub">Ready for recognition</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-icon orange">⚠️</div>
+          <div class="stat-value" id="stat-missing">–</div>
+          <div class="stat-label">Missing Photos</div>
+          <div class="stat-sub">Need manual upload</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-icon blue">🏫</div>
+          <div class="stat-value" id="stat-depts">–</div>
+          <div class="stat-label">Departments</div>
+          <div class="stat-sub">Active departments</div>
+        </div>
+      </div>
+
+      <!-- Student cards list -->
+      <div id="students-area">
+        <div class="student-cards-grid" id="students-grid">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ── Student Detail Modal ── -->
+<div class="modal-overlay" id="student-modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <span style="font-size:15px; font-weight:700; color:var(--text-primary);">Student Details</span>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <!-- populated by JS -->
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<script src="js/students.js"></script>
+</body>
+</html>

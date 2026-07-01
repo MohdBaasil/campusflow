@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance Reports – College Management System</title>
+  <meta name="description" content="View global student attendance percentage report." />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .filter-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    
+    .filter-item {
+      flex: 1;
+      min-width: 180px;
+    }
+    
+    .status-text-critical {
+      color: var(--red);
+      font-weight: 800;
+      animation: pulse-red 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-red {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <div class="brand-icon">🏫</div>
+        <div>
+          <div class="brand-name">CMS Portal</div>
+          <div class="brand-sub">Lecturer Console</div>
+        </div>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main Menu</div>
+      <a href="lecturer_dashboard.html" class="nav-item">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="attendance.html" class="nav-item">
+        <span class="nav-icon">📷</span>
+        <span>Take Face Attendance</span>
+      </a>
+      <a href="class_session.html" class="nav-item">
+        <span class="nav-icon">🎥</span>
+        <span>Live Session</span>
+      </a>
+      <a href="internal_marks.html" class="nav-item">
+        <span class="nav-icon">📝</span>
+        <span>Internal Marks</span>
+      </a>
+      <a href="attendance_report.html" class="nav-item active">
+        <span class="nav-icon">📈</span>
+        <span>Attendance Report</span>
+      </a>
+      <a href="notifications.html" class="nav-item">
+        <span class="nav-icon">🔔</span>
+        <span>Notifications</span>
+      </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <button class="btn btn-outline btn-sm" onclick="logout()" style="width:100%;">
+        🚪 Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Attendance Reports</h1>
+        <p>Monitor student attendance logs, warnings, and averages.</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-outline btn-sm" onclick="exportAttendanceReport()">
+          📥 Export CSV
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content">
+      
+      <!-- Stats Summary Card Grid -->
+      <div class="stats-grid" style="margin-bottom: 28px;">
+        <div class="stat-card purple">
+          <div class="stat-icon purple">👥</div>
+          <div class="stat-value" id="summary-total-students">0</div>
+          <div class="stat-label">Students Monitored</div>
+        </div>
+        
+        <div class="stat-card blue">
+          <div class="stat-icon blue">📈</div>
+          <div class="stat-value" id="summary-average-attendance">0%</div>
+          <div class="stat-label">Average Attendance</div>
+        </div>
+        
+        <div class="stat-card orange">
+          <div class="stat-icon orange">⚠️</div>
+          <div class="stat-value" id="summary-low-attendance">0</div>
+          <div class="stat-label">Below 75% Threshold</div>
+        </div>
+        
+        <div class="stat-card red">
+          <div class="stat-icon red">🚨</div>
+          <div class="stat-value" id="summary-critical-attendance">0</div>
+          <div class="stat-label">Below 50% (Critical)</div>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="card" style="margin-bottom: 28px;">
+        <div class="filter-row">
+          <div class="filter-item">
+            <label class="form-label" for="filter-dept">Department</label>
+            <select class="form-control" id="filter-dept" onchange="onFilterChange()">
+              <option value="All">All Departments</option>
+              <option>Computer Science</option>
+              <option>CSE - AIML</option>
+              <option>Electronics Engineering</option>
+              <option>Mechanical Engineering</option>
+              <option>Civil Engineering</option>
+            </select>
+          </div>
+          
+          <div class="filter-item">
+            <label class="form-label" for="filter-range">Attendance Range</label>
+            <select class="form-control" id="filter-range" onchange="onFilterChange()">
+              <option value="all">Show All Students</option>
+              <option value="good">Good (>= 75%)</option>
+              <option value="warning">Warning (50% - 75%)</option>
+              <option value="critical">Critical (< 50%)</option>
+            </select>
+          </div>
+          
+          <div class="filter-item" style="flex: 1.5;">
+            <label class="form-label" for="search-input">Search Student</label>
+            <input class="form-control" type="text" id="search-input" placeholder="🔍 Search by name or roll number..." oninput="onFilterChange()" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Student Attendance Table Card -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">📋 Student Attendance Overview</h3>
+        </div>
+        
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Roll Number</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Attended Classes</th>
+                <th>Total Classes</th>
+                <th>Percentage</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="report-table-body">
+              <!-- Loaded dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="js/attendance_report.js"></script>
+<script>
+  // Auth control
+  document.addEventListener('DOMContentLoaded', () => {
+    const userType = localStorage.getItem('user_type');
+    if (userType !== 'lecturer') {
+      window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+    }
+  });
+
+  function logout() {
+    localStorage.clear();
+    window.location.href = 'login.html';
+  }
+</script>
+</body>
+</html>

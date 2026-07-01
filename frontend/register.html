@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register Student – Smart Attendance System</title>
+  <meta name="description" content="Register a new student with face photos for ArcFace face recognition attendance tracking." />
+  <link rel="stylesheet" href="css/style.css?v=2" />
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <div class="brand-icon">🎓</div>
+        <div><div class="brand-name">SmartAttend</div><div class="brand-sub">ArcFace Face Recognition</div></div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span>Dashboard</span></a>
+      <div class="nav-section-label">Manage</div>
+      <a href="register.html" class="nav-item active"><span class="nav-icon">👤</span><span>Register Student</span></a>
+      <a href="students.html" class="nav-item"><span class="nav-icon">👥</span><span>View Students</span></a>
+      <a href="enroll.html" class="nav-item"><span class="nav-icon">🤳</span><span>Enroll Face</span></a>
+      <a href="reports.html" class="nav-item"><span class="nav-icon">📋</span><span>Reports</span></a>
+      <div class="nav-section-label">College System</div>
+      <a href="lecturer_dashboard.html" class="nav-item">
+        <span class="nav-icon">👩‍🏫</span><span>Lecturer Portal</span>
+      </a>
+      <a href="class_session.html" class="nav-item">
+        <span class="nav-icon">🎥</span><span>Live Sessions</span>
+      </a>
+      <a href="internal_marks.html" class="nav-item">
+        <span class="nav-icon">📝</span><span>Internal Marks</span>
+      </a>
+      <a href="attendance_report.html" class="nav-item">
+        <span class="nav-icon">📈</span><span>Attendance Reports</span>
+      </a>
+      <a href="notifications.html" class="nav-item">
+        <span class="nav-icon">🔔</span><span>Notifications</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="status-badge"><div class="status-dot"></div><span>Server Online</span></div>
+      <button class="btn btn-outline btn-sm" style="width:100%; margin-top:10px;" 
+              onclick="localStorage.clear(); window.location.href='login.html';">
+        🚪 Logout
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Register Student</h1>
+        <p>Enroll a new student with face photos for ArcFace recognition</p>
+      </div>
+      <div class="topbar-actions">
+        <a href="index.html" class="btn btn-outline btn-sm">← Dashboard</a>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- Step Indicator -->
+      <div class="steps" style="margin-bottom:28px;">
+        <div class="step active" id="step-1">
+          <div class="step-num">1</div>
+          <div class="step-label">Fill Details</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" id="step-2">
+          <div class="step-num">2</div>
+          <div class="step-label">Capture Photos</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" id="step-3">
+          <div class="step-num">3</div>
+          <div class="step-label">Register</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" id="step-4">
+          <div class="step-num">4</div>
+          <div class="step-label">Train Model</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+
+        <!-- Form/Bulk Card -->
+        <div>
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card-header" style="padding-bottom:12px; border-bottom:1px solid var(--border);">
+              <div class="tab-headers" style="display:flex; gap:16px; width:100%;">
+                <div class="tab-header active" id="tab-single" onclick="switchRegTab('single')" style="cursor:pointer; padding-bottom:4px; border-bottom:2px solid var(--purple); font-weight:700; font-size:14px; color:var(--text-primary); transition:all 0.2s;">👤 Single Student</div>
+                <div class="tab-header" id="tab-bulk" onclick="switchRegTab('bulk')" style="cursor:pointer; padding-bottom:4px; border-bottom:2px solid transparent; font-weight:700; font-size:14px; color:var(--text-muted); transition:all 0.2s;">📁 Google Form Bulk Import</div>
+              </div>
+            </div>
+
+            <div id="reg-alert" style="margin-top:16px;"></div>
+
+            <!-- Single Student Fields -->
+            <div id="single-form-fields" style="margin-top:12px;">
+              <div class="form-group">
+                <label class="form-label" for="reg-name">Full Name</label>
+                <input class="form-control" type="text" id="reg-name" placeholder="Enter student full name" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="reg-roll">Roll Number</label>
+                <input class="form-control" type="text" id="reg-roll" placeholder="e.g. CS2021001" />
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="reg-dept">Department</label>
+                <select class="form-control" id="reg-dept">
+                  <option value="">— Select Department —</option>
+                  <option>Computer Science</option>
+                  <option>Electronics Engineering</option>
+                  <option>Mechanical Engineering</option>
+                  <option>Civil Engineering</option>
+                  <option>Mathematics</option>
+                  <option>Physics</option>
+                  <option>Chemistry</option>
+                  <option>Management</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Google Form Bulk Import Fields -->
+            <div id="bulk-form-fields" style="display:none; margin-top:12px;">
+              <div class="form-group">
+                <label class="form-label" for="bulk-csv">Google Form Responses (CSV)</label>
+                <input class="form-control" type="file" id="bulk-csv" accept=".csv" />
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                  Upload CSV containing fields: Name, Roll Number, Department
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:20px;">
+                <label class="form-label" for="bulk-zip">Student Photos (ZIP - Optional)</label>
+                <input class="form-control" type="file" id="bulk-zip" accept=".zip" />
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                  ZIP containing photos. Match filenames to student Roll Numbers (e.g., CS2021001.jpg, CS2021001_1.png)
+                </div>
+              </div>
+              <button class="btn btn-primary" id="bulk-import-btn" onclick="importBulkStudents()" style="width:100%;">
+                🚀 Import Students
+              </button>
+            </div>
+          </div>
+
+          <!-- Photo Capture Card -->
+          <div class="card" id="photo-capture-card">
+            <div class="card-header">
+              <div class="card-title">📸 Face Photos</div>
+              <span id="photo-count-label" style="font-size:12px; font-weight:700;" class="badge badge-purple">0 / 5</span>
+            </div>
+
+            <div class="progress-bar-wrapper" style="margin-bottom:16px;">
+              <div class="progress-bar-fill" id="photo-progress" style="width:0%"></div>
+            </div>
+
+            <div class="photo-grid" id="photo-grid">
+              <div class="photo-slot" id="slot-0">📷</div>
+              <div class="photo-slot" id="slot-1">📷</div>
+              <div class="photo-slot" id="slot-2">📷</div>
+              <div class="photo-slot" id="slot-3">📷</div>
+              <div class="photo-slot" id="slot-4">📷</div>
+            </div>
+
+            <div style="font-size:11px; color:var(--text-muted); margin:12px 0; text-align:center;">
+              💡 Tip: Vary your angle slightly between each capture for better accuracy
+            </div>
+
+            <div class="divider"></div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn btn-primary" id="capture-btn" onclick="capturePhoto()">📸 Capture</button>
+              <button class="btn btn-outline" onclick="document.getElementById('photo-upload').click()">📁 Upload Files</button>
+              <button class="btn btn-outline" onclick="resetPhotos()">🔄 Reset</button>
+              <input type="file" id="photo-upload" accept="image/*" multiple style="display:none;" onchange="handlePhotoUpload(event)" />
+              <button class="btn btn-success" id="register-btn" onclick="registerStudent()" disabled style="flex:1;">
+                ✅ Register Student
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Camera + Students -->
+        <div>
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+              <div class="card-title">📷 Live Camera</div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-outline btn-sm" id="cam-flip-btn" onclick="flipCamera()">↔ Flip View</button>
+                <button class="btn btn-outline btn-sm" id="cam-toggle-btn" onclick="toggleCamera()">▶ Start Camera</button>
+              </div>
+            </div>
+            <div class="camera-container" id="camera-container">
+              <video id="reg-video" autoplay muted playsinline style="display:none;"></video>
+              <canvas id="reg-canvas" style="display:none;"></canvas>
+              <div id="camera-placeholder" style="
+                display:flex; align-items:center; justify-content:center;
+                height:100%; min-height:300px; flex-direction:column;
+                gap:14px; color:var(--text-muted);">
+                <div style="font-size:52px; opacity:0.4;">📷</div>
+                <div style="font-size:13px; font-weight:500;">Click <strong style="color:var(--purple);">Start Camera</strong> to begin</div>
+              </div>
+              <div class="camera-overlay" id="cam-overlay" style="display:none;">
+                <div class="scan-line"></div>
+                <div class="camera-corner corner-tl"></div>
+                <div class="camera-corner corner-tr"></div>
+                <div class="camera-corner corner-bl"></div>
+                <div class="camera-corner corner-br"></div>
+              </div>
+              <div class="camera-status" id="cam-status" style="display:none;">🟢 Camera Ready</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📋 Registered Students</div>
+              <button class="btn btn-outline btn-sm" onclick="loadStudents()">🔄 Refresh</button>
+            </div>
+            <div id="students-list" style="max-height:260px; overflow-y:auto;">
+              <div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">No students yet</div></div>
+            </div>
+            <!-- Train prompt -->
+            <div id="train-prompt" style="display:none; margin-top:16px;">
+              <div class="alert alert-purple">
+                ✅ Student registered! Now train the model to enable recognition.
+              </div>
+              <button class="btn btn-primary" style="width:100%;" onclick="trainModelFromRegister()">
+                🧠 Train Model Now
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- QR Code Modal -->
+<div id="qr-modal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div class="card" style="width:100%; max-width:400px; margin:20px; padding:24px; text-align:center; position:relative;">
+    <button onclick="closeQRModal()" style="position:absolute; top:12px; right:16px; border:none; background:none; font-size:20px; cursor:pointer; color:var(--text-muted); font-weight:bold;">×</button>
+    <h3 style="margin-top:0; margin-bottom:8px; color:var(--text-primary);" id="qr-student-name">Student QR Code</h3>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:20px;" id="qr-student-roll">Roll Number</p>
+    <div style="background:#fff; padding:16px; border-radius:var(--radius-md); display:inline-block; box-shadow:0 8px 30px rgba(0,0,0,0.06); margin-bottom:20px;">
+      <img id="qr-modal-image" src="" alt="QR Code" style="width:200px; height:200px; display:block;" />
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="closeQRModal()">Close</button>
+      <a id="qr-download-link" href="" download="" class="btn btn-primary" style="flex:1; text-decoration:none; display:flex; align-items:center; justify-content:center; height:38px;">💾 Download</a>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<script src="js/register.js"></script>
+</body>
+</html>

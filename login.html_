@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login – Smart Attendance System</title>
+  <meta name="description" content="Login to the Smart Attendance System — Staff Admin or Student portal." />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .login-card {
+      background: rgba(14,12,26,0.95);
+      border: 1px solid rgba(139,92,246,0.2);
+      border-radius: var(--radius-xl);
+      padding: 0;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 60px rgba(139,92,246,0.08);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      position: relative;
+      overflow: hidden;
+    }
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--grad-brand);
+    }
+    .login-card::after {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      background: rgba(139,92,246,0.1);
+      filter: blur(30px);
+      pointer-events: none;
+    }
+
+    /* Header */
+    .login-header {
+      text-align: center;
+      padding: 36px 32px 24px;
+      position: relative;
+      z-index: 1;
+    }
+    .login-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px; height: 64px;
+      background: var(--grad-brand);
+      border-radius: 18px;
+      font-size: 30px;
+      margin-bottom: 18px;
+      box-shadow: var(--glow-purple);
+    }
+    .login-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -0.6px;
+      background: linear-gradient(135deg, #fff 30%, #c4b5fd 70%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+    .login-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Tabs */
+    .login-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      z-index: 1;
+    }
+    .login-tab {
+      flex: 1;
+      padding: 14px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition);
+      border-bottom: 3px solid transparent;
+      background: none;
+      border-top: none; border-left: none; border-right: none;
+      font-family: inherit;
+    }
+    .login-tab:hover { color: var(--text-secondary); }
+    .login-tab.active {
+      color: var(--purple);
+      border-bottom-color: var(--purple);
+      background: rgba(139,92,246,0.05);
+    }
+
+    /* Body */
+    .login-body {
+      padding: 28px 32px 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Pane */
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; animation: fadeIn 0.3s ease; }
+
+    /* Sub-tabs for student */
+    .sub-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .sub-toggle-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .sub-toggle-btn.active {
+      background: rgba(139,92,246,0.12);
+      border-color: rgba(139,92,246,0.4);
+      color: var(--purple);
+    }
+
+    /* Wizard steps */
+    .wizard-step { display: none; }
+    .wizard-step.active { display: block; animation: fadeIn 0.3s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Capture guides */
+    .pose-guides {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .pose-chip {
+      flex: 1;
+      padding: 6px 4px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      transition: var(--transition);
+    }
+    .pose-chip.active {
+      background: rgba(139,92,246,0.15);
+      border-color: rgba(139,92,246,0.4);
+      color: var(--purple);
+    }
+    .pose-chip.done {
+      background: rgba(16,185,129,0.12);
+      border-color: rgba(16,185,129,0.3);
+      color: var(--green);
+    }
+    .pose-emoji { font-size: 16px; display: block; margin-bottom: 2px; }
+
+    .camera-box {
+      position: relative;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: #000;
+      border: 1px solid var(--border);
+      aspect-ratio: 4/3;
+      margin-bottom: 14px;
+    }
+    .camera-box video, .camera-box canvas {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+
+    .pose-instruction {
+      text-align: center;
+      padding: 10px;
+      background: rgba(139,92,246,0.08);
+      border: 1px solid rgba(139,92,246,0.2);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--purple);
+      margin-bottom: 14px;
+    }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 2px dashed rgba(139,92,246,0.3);
+      border-radius: var(--radius-md);
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-bottom: 14px;
+      background: rgba(139,92,246,0.03);
+    }
+    .drop-zone:hover {
+      border-color: var(--purple);
+      background: rgba(139,92,246,0.06);
+    }
+    .drop-zone.filled {
+      border-color: var(--green);
+      border-style: solid;
+      background: rgba(16,185,129,0.05);
+    }
+    .drop-zone-icon { font-size: 28px; margin-bottom: 8px; }
+    .drop-zone-text { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+    .drop-zone-file { font-size: 12px; color: var(--green); font-weight: 700; margin-top: 6px; }
+
+    /* Success screen */
+    .success-icon {
+      font-size: 72px;
+      text-align: center;
+      margin-bottom: 16px;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Wizard step bar */
+    .reg-steps {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 24px;
+    }
+    .reg-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .reg-step-num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: var(--transition);
+    }
+    .reg-step.active .reg-step-num {
+      background: var(--grad-brand);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(139,92,246,0.4);
+    }
+    .reg-step.done .reg-step-num {
+      background: var(--grad-green);
+      border-color: transparent;
+      color: #fff;
+    }
+    .reg-step-label { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .reg-step.active .reg-step-label { color: var(--text-primary); }
+    .reg-step.done .reg-step-label { color: var(--green); }
+    .reg-step-line {
+      height: 1px;
+      background: var(--border);
+      flex: 1;
+      margin: 0 6px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-container">
+  <div class="login-card">
+
+    <!-- Header -->
+    <div class="login-header">
+      <div class="login-logo">🎓</div>
+      <div class="login-title">SmartAttend</div>
+      <div class="login-subtitle">ArcFace Face Recognition Attendance System</div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="login-tabs">
+      <button class="login-tab active" id="tab-staff" onclick="switchTab('staff')">🛡️ Staff Login</button>
+      <button class="login-tab" id="tab-student" onclick="switchTab('student')">🎓 Student Portal</button>
+    </div>
+
+    <div class="login-body">
+      <div id="login-alert"></div>
+
+      <!-- ═══ STAFF TAB ═══ -->
+      <div class="tab-pane active" id="pane-staff">
+        <div class="form-group">
+          <label class="form-label" for="staff-user">Username</label>
+          <input class="form-control" type="text" id="staff-user" placeholder="Enter admin username" autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="staff-pass">Password</label>
+          <input class="form-control" type="password" id="staff-pass" placeholder="Enter password" autocomplete="current-password" />
+        </div>
+        <button class="btn btn-primary" id="staff-login-btn" onclick="staffLogin()" style="width:100%;margin-top:8px;">
+          🔐 Login as Staff
+        </button>
+        <div style="text-align:center; margin-top:14px; font-size:11px; color:var(--text-muted);">
+          Default: admin / admin123
+        </div>
+      </div>
+
+      <!-- ═══ STUDENT TAB ═══ -->
+      <div class="tab-pane" id="pane-student">
+
+        <!-- Sub-toggle: Login / Register -->
+        <div class="sub-toggle">
+          <button class="sub-toggle-btn active" id="sub-login" onclick="switchStudentView('login')">🔑 Login</button>
+          <button class="sub-toggle-btn" id="sub-register" onclick="switchStudentView('register')">📝 New Registration</button>
+        </div>
+
+        <!-- Student Login -->
+        <div id="student-login-view">
+          <div style="display:none; gap:8px; margin-bottom:16px;">
+            <button class="sub-toggle-btn active" id="btn-stu-face-login" onclick="switchStudentLoginMode('face')" style="padding: 8px; font-size: 12px;">🤳 Face Login</button>
+            <button class="sub-toggle-btn" id="btn-stu-pass-login" onclick="switchStudentLoginMode('password')" style="padding: 8px; font-size: 12px;">🔑 Password Login</button>
+          </div>
+
+          <!-- Face Login Pane -->
+          <div id="stu-face-login-pane">
+            <div class="form-group">
+              <label class="form-label" for="stu-roll">Roll Number / USN</label>
+              <input class="form-control" type="text" id="stu-roll" placeholder="e.g. 23BTRCL110" style="text-transform:uppercase;" />
+            </div>
+            
+            <div class="camera-box" style="margin-top: 14px; display: none;" id="stu-login-cam-box">
+              <video id="stu-login-video" autoplay muted playsinline></video>
+              <canvas id="stu-login-canvas" style="display:none;"></canvas>
+              <img id="stu-login-uploaded-preview" style="display: none; width: 100%; height: 100%; object-fit: cover;" />
+              <div class="camera-overlay">
+                <div class="scan-line"></div>
+                <div class="camera-corner corner-tl"></div>
+                <div class="camera-corner corner-tr"></div>
+                <div class="camera-corner corner-bl"></div>
+                <div class="camera-corner corner-br"></div>
+              </div>
+              <div class="camera-status" id="stu-login-cam-status">📷 Camera ready</div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-stu-face-scan" onclick="studentFaceLogin()" style="width:100%;margin-top:8px;">
+              🤳 Scan Face & Login
+            </button>
+
+            <!-- File upload fallback -->
+            <div style="text-align: center; margin-top: 12px;">
+              <span style="font-size: 12px; color: var(--text-muted);">Camera not working? </span>
+              <button class="btn btn-outline btn-sm" onclick="document.getElementById('stu-login-file-input').click()" style="padding: 4px 8px; font-size: 11px;">Upload Photo File</button>
+              <input type="file" id="stu-login-file-input" accept="image/*" style="display: none;" onchange="handleStuLoginFileUpload(event)" />
+            </div>
+          </div>
+
+          <!-- Password Login Pane -->
+          <div id="stu-pass-login-pane" style="display:none;">
+            <div class="form-group">
+              <label class="form-label" for="stu-roll-pass">Roll Number / USN</label>
+              <input class="form-control" type="text" id="stu-roll-pass" placeholder="e.g. 23BTRCL110" style="text-transform:uppercase;" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="stu-pass">Password</label>
+              <input class="form-control" type="password" id="stu-pass" placeholder="Enter your password" />
+            </div>
+            <button class="btn btn-primary" onclick="studentPasswordLogin()" style="width:100%;margin-top:8px;">
+              🔐 Login with Password
+            </button>
+          </div>
+        </div>
+
+        <!-- Student Registration Wizard -->
+        <div id="student-register-view" style="display:none;">
+
+          <!-- Step bar -->
+          <div class="reg-steps">
+            <div class="reg-step active" id="rs-1"><div class="reg-step-num">1</div><div class="reg-step-label">Details</div></div>
+            <div class="reg-step-line"></div>
+            <div class="reg-step" id="rs-2"><div class="reg-step-num">2</div><div class="reg-step-label">Documents</div></div>
+            <div class="reg-step-line"></div>
+            <div class="reg-step" id="rs-3"><div class="reg-step-num">3</div><div class="reg-step-label">Face Capture</div></div>
+            <div class="reg-step-line"></div>
+            <div class="reg-step" id="rs-4"><div class="reg-step-num">4</div><div class="reg-step-label">Done</div></div>
+          </div>
+
+          <!-- STEP 1: Details -->
+          <div class="wizard-step active" id="wiz-1">
+            <div class="form-group">
+              <label class="form-label" for="reg-name">Full Name</label>
+              <input class="form-control" type="text" id="reg-name" placeholder="Enter your full name" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-usn">College USN / Roll Number</label>
+              <input class="form-control" type="text" id="reg-usn" placeholder="e.g. 23BTRCL110" style="text-transform:uppercase;" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-dept">Department</label>
+              <select class="form-control" id="reg-dept">
+                <option value="">— Select Department —</option>
+                <option>CSE - AIML</option>
+                <option>Computer Science</option>
+                <option>Electronics Engineering</option>
+                <option>Mechanical Engineering</option>
+                <option>Civil Engineering</option>
+                <option>BBA</option>
+                <option>Mathematics</option>
+                <option>Physics</option>
+                <option>Chemistry</option>
+                <option>Management</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-pwd">Create Password</label>
+              <input class="form-control" type="password" id="reg-pwd" placeholder="Min 4 characters" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-pwd2">Confirm Password</label>
+              <input class="form-control" type="password" id="reg-pwd2" placeholder="Re-enter password" />
+            </div>
+            <button class="btn btn-primary" onclick="wizNext(1)" style="width:100%;">
+              Continue → Documents
+            </button>
+          </div>
+
+          <!-- STEP 2: Documents -->
+          <div class="wizard-step" id="wiz-2">
+            <div class="drop-zone" id="dz-marksheet" onclick="document.getElementById('file-marksheet').click()">
+              <div class="drop-zone-icon">📄</div>
+              <div class="drop-zone-text">Click to upload <strong>Marksheet</strong> (PDF/Image)</div>
+              <div class="drop-zone-file" id="dz-marksheet-name"></div>
+              <input type="file" id="file-marksheet" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="onDocSelect(this,'marksheet')" />
+            </div>
+            <div class="drop-zone" id="dz-idcard" onclick="document.getElementById('file-idcard').click()">
+              <div class="drop-zone-icon">🪪</div>
+              <div class="drop-zone-text">Click to upload <strong>ID Card / Aadhaar</strong> (PDF/Image)</div>
+              <div class="drop-zone-file" id="dz-idcard-name"></div>
+              <input type="file" id="file-idcard" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="onDocSelect(this,'idcard')" />
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:16px; text-align:center;">
+              💡 Documents are optional but recommended for verification
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-outline" onclick="wizBack(2)" style="flex:1;">← Back</button>
+              <button class="btn btn-primary" onclick="wizNext(2)" style="flex:2;">Continue → Face Capture</button>
+            </div>
+          </div>
+
+          <!-- STEP 3: Face Capture -->
+          <div class="wizard-step" id="wiz-3">
+            <div class="pose-guides" id="pose-guides">
+              <div class="pose-chip active" id="pose-0"><span class="pose-emoji">📷</span>Front</div>
+              <div class="pose-chip" id="pose-1"><span class="pose-emoji">😊</span>Smile</div>
+              <div class="pose-chip" id="pose-2"><span class="pose-emoji">◀</span>Left</div>
+              <div class="pose-chip" id="pose-3"><span class="pose-emoji">▶</span>Right</div>
+              <div class="pose-chip" id="pose-4"><span class="pose-emoji">⬆</span>Up</div>
+            </div>
+
+            <div class="pose-instruction" id="pose-instruction">📷 Look straight at the camera (neutral face)</div>
+
+            <div class="progress-bar-wrapper" style="margin-bottom:12px;">
+              <div class="progress-bar-fill" id="face-progress" style="width:0%"></div>
+            </div>
+
+            <div class="camera-box">
+              <video id="reg-video" autoplay muted playsinline></video>
+              <canvas id="reg-canvas" style="display:none;"></canvas>
+              <div class="camera-overlay">
+                <div class="scan-line"></div>
+                <div class="camera-corner corner-tl"></div>
+                <div class="camera-corner corner-tr"></div>
+                <div class="camera-corner corner-bl"></div>
+                <div class="camera-corner corner-br"></div>
+              </div>
+              <div class="camera-status" id="reg-cam-status">📷 Starting camera...</div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-outline" onclick="wizBack(3)" style="flex:1;">← Back</button>
+              <button class="btn btn-primary" id="capture-pose-btn" onclick="capturePose()" style="flex:2;">
+                📸 Capture Pose 1/5
+              </button>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:10px; text-align:center;">
+              💡 Ensure good lighting. Vary your angle as instructed for best recognition accuracy.
+            </div>
+          </div>
+
+          <!-- STEP 4: Done -->
+          <div class="wizard-step" id="wiz-4">
+            <div class="success-icon">🎉</div>
+            <div style="text-align:center; font-size:20px; font-weight:800; color:var(--green); margin-bottom:8px;">
+              Registration Complete!
+            </div>
+            <div style="text-align:center; font-size:14px; color:var(--text-secondary); margin-bottom:24px; line-height:1.6;">
+              Your face data has been enrolled. You can now log in and use face-verified attendance.
+            </div>
+            <div id="reg-result-info" style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; margin-bottom:20px; font-size:13px;"></div>
+            <button class="btn btn-primary" onclick="switchStudentView('login')" style="width:100%;">
+              🔑 Go to Login
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<script src="js/login.js"></script>
+</body>
+</html>
