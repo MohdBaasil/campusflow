@@ -17,13 +17,71 @@ KNOWN_FACES_DIR = os.path.join(
 
 def train_model():
     """
-    Load all registered face images, extract ArcFace embeddings, and train the SVM.
-    Supports single-student mode using a synthetic negative class.
-    Returns (success: bool, message: str, details: dict)
+    Load all registered face embeddings from the database, and train the SVM.
+    This allows running on ephemeral filesystems (like Render free tier)
+    since raw images are not required for retraining the classifier.
+    If database contains no embeddings, it falls back to reading from local files.
     """
+    from backend.database.db import SessionLocal, Student, FaceEmbedding
+    import numpy as np
+
     detector = InsightFaceDetector()
     recognizer = InsightFaceRecognizer()
 
+    db = SessionLocal()
+    try:
+        # Load all face embeddings from the database
+        embeddings_db = db.query(FaceEmbedding).all()
+        
+        if embeddings_db:
+            print(f"[Trainer] Found {len(embeddings_db)} face embeddings in database. Training in-memory...")
+            features_list = []
+            labels = []
+            student_counts = {}
+
+            for record in embeddings_db:
+                stored_emb = np.frombuffer(record.embedding, dtype=np.float32)
+                features_list.append(stored_emb.tolist())
+                labels.append(str(record.student_id))
+                student_counts[str(record.student_id)] = student_counts.get(str(record.student_id), 0) + 1
+
+            if features_list:
+                # ── Single-student mode: create a synthetic negative class ──
+                unique_classes = list(set(labels))
+                if len(unique_classes) == 1:
+                    print("[Trainer] Single student detected — adding synthetic negative samples for SVM.")
+                    sample_features = np.array(features_list)
+                    feature_dim = sample_features.shape[1]
+
+                    # Generate synthetic negative samples via Gaussian noise perturbation
+                    rng = np.random.RandomState(42)
+                    n_synthetic = max(len(features_list), 5)
+                    synthetic = rng.randn(n_synthetic, feature_dim) * 0.5
+                    synthetic = np.clip(synthetic, -1, 1)
+
+                    SYNTHETIC_LABEL = "__synthetic_negative__"
+                    for s in synthetic:
+                        features_list.append(s.tolist())
+                        labels.append(SYNTHETIC_LABEL)
+
+                try:
+                    recognizer.train(features_list, labels)
+                    num_real_students = len(student_counts)
+                    return True, f"Model trained successfully from database! {len(features_list)} embeddings processed across {num_real_students} student(s).", {
+                        'total_embeddings': sum(student_counts.values()),
+                        'students': student_counts,
+                        'single_student_mode': len(unique_classes) == 1
+                    }
+                except Exception as e:
+                    return False, f"Database training failed: {str(e)}", {}
+
+        print("[Trainer] Database empty. Falling back to reading raw images from local folder...")
+    except Exception as db_err:
+        print(f"[Trainer] Database query failed ({db_err}). Falling back to local files...")
+    finally:
+        db.close()
+
+    # ── Fallback: file-based training ──
     features_list = []
     labels = []
     student_counts = {}
@@ -76,7 +134,6 @@ def train_model():
         rng = np.random.RandomState(42)
         n_synthetic = max(len(features_list), 5)
         synthetic = rng.randn(n_synthetic, feature_dim) * 0.5
-        # Normalize to [-1, 1] range like standard features
         synthetic = np.clip(synthetic, -1, 1)
 
         SYNTHETIC_LABEL = "__synthetic_negative__"
@@ -84,16 +141,14 @@ def train_model():
             features_list.append(s.tolist())
             labels.append(SYNTHETIC_LABEL)
 
-        print(f"[Trainer] Added {n_synthetic} synthetic negative samples.")
-
     try:
         recognizer.train(features_list, labels)
         num_real_students = len(student_counts)
-        return True, f"Model trained successfully! {len(features_list)} images processed across {num_real_students} student(s).", {
+        return True, f"Model trained successfully from local files! {len(features_list)} images processed across {num_real_students} student(s).", {
             'total_images': sum(student_counts.values()),
             'students': student_counts,
             'failed_images': failed,
             'single_student_mode': len(unique_classes) == 1
         }
     except Exception as e:
-        return False, f"Training failed: {str(e)}", {}
+        return False, f"Local files training failed: {str(e)}", {}

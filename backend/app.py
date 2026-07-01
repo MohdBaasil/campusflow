@@ -108,6 +108,17 @@ run_migration_v2()
 detector = InsightFaceDetector()
 recognizer = InsightFaceRecognizer()
 
+# Automatic model retraining at startup if missing on disk (e.g. fresh Render container)
+if not recognizer.is_trained:
+    print("[Startup] Recognizer model not found on disk. Retraining from database embeddings...")
+    try:
+        success, msg, _ = train_model()
+        print(f"[Startup] Retraining outcome: {msg}")
+        if success:
+            recognizer._load_model()
+    except Exception as startup_err:
+        print(f"[Startup] Automatic model retraining failed: {startup_err}")
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KNOWN_FACES_DIR = os.path.join(BASE_DIR, 'data', 'known_faces')
 os.makedirs(KNOWN_FACES_DIR, exist_ok=True)
