@@ -17,6 +17,9 @@ function switchTab(tab) {
   if (tab === 'student') {
     switchStudentView('login');
   }
+  if (tab === 'lecturer') {
+    switchLecturerView('login');
+  }
 }
 
 function switchStudentView(view) {
@@ -137,6 +140,69 @@ async function lecturerLogin() {
   } finally {
     btn.disabled = false;
     btn.innerHTML = '🔐 Login as Lecturer';
+  }
+}
+
+// ─── Lecturer Registration ────────────────────────
+function switchLecturerView(view) {
+  clearAlert();
+  document.getElementById('sub-lecturer-login').classList.toggle('active', view === 'login');
+  document.getElementById('sub-lecturer-register').classList.toggle('active', view === 'register');
+  document.getElementById('lecturer-login-view').style.display = view === 'login' ? 'block' : 'none';
+  document.getElementById('lecturer-register-view').style.display = view === 'register' ? 'block' : 'none';
+}
+
+async function registerLecturer() {
+  const name = document.getElementById('lect-reg-name').value.trim();
+  const employeeId = document.getElementById('lect-reg-id').value.trim().toUpperCase();
+  const department = document.getElementById('lect-reg-dept').value;
+  const email = document.getElementById('lect-reg-email').value.trim();
+  const phone = document.getElementById('lect-reg-phone').value.trim();
+  const password = document.getElementById('lect-reg-pwd').value;
+
+  if (!name || !employeeId || !department || !password) {
+    showAlert('⚠️ Name, Employee ID, Department, and Password are required.', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('lecturer-register-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Registering...';
+
+  try {
+    const res = await fetch(`${API}/api/lecturers`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        employee_id: employeeId,
+        department,
+        email,
+        phone,
+        password
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      toast('✅ Registration successful! Please log in.', 'success');
+      // Clear fields
+      document.getElementById('lect-reg-name').value = '';
+      document.getElementById('lect-reg-id').value = '';
+      document.getElementById('lect-reg-dept').value = '';
+      document.getElementById('lect-reg-email').value = '';
+      document.getElementById('lect-reg-phone').value = '';
+      document.getElementById('lect-reg-pwd').value = '';
+      // Switch to login
+      switchLecturerView('login');
+    } else {
+      showAlert(`❌ ${data.error}`, 'error');
+    }
+  } catch (err) {
+    showAlert('❌ Cannot connect to server. Make sure the backend is running.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '📝 Register as Staff';
   }
 }
 
