@@ -1,12 +1,13 @@
 FROM python:3.12-slim
 
 # Install system dependencies needed for compilation and OpenCV/InsightFace
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Force IPv4 to avoid network timeouts, and use libgl1 (replaces deprecated libgl1-mesa-glx)
+RUN apt-get -o Acquire::ForceIPv4=true update && apt-get -o Acquire::ForceIPv4=true install -y --no-install-recommends \
     build-essential \
     cmake \
     gcc \
     g++ \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
