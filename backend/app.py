@@ -222,6 +222,11 @@ def login_face():
         if embedding is None:
             return jsonify({'success': False, 'error': 'No face detected. Please ensure clear lighting and try again.'}), 400
 
+        # Liveness check (Anti-spoofing / Proxy detection)
+        is_live, liveness_score, liveness_msg = detector.detect_liveness(frame, bbox)
+        if not is_live:
+            return jsonify({'success': False, 'error': liveness_msg}), 400
+
         embeddings = db.query(FaceEmbedding).filter(FaceEmbedding.student_id == student.id).all()
         if not embeddings:
             return jsonify({'success': False, 'error': f'No registered face photos found for {student.name}. Please contact admin.'}), 400
@@ -1094,6 +1099,11 @@ def verify_student_attendance():
         embedding, bbox = detector.preprocess_for_training(frame)
         if embedding is None:
             return jsonify({'error': 'No face detected. Please look straight into your front camera with good lighting.'}), 400
+
+        # Liveness check (Anti-spoofing / Proxy detection)
+        is_live, liveness_score, liveness_msg = detector.detect_liveness(frame, bbox)
+        if not is_live:
+            return jsonify({'error': liveness_msg}), 400
 
         # Retrieve Registered Embeddings
         embeddings = db.query(FaceEmbedding).filter(FaceEmbedding.student_id == student.id).all()
