@@ -91,7 +91,9 @@ async function staffLogin() {
       localStorage.setItem('user_type', data.user_type);
       localStorage.setItem('user_data', JSON.stringify(data.user_data));
       toast('✅ Login successful! Redirecting...', 'success');
-      setTimeout(() => { window.location.href = 'index.html'; }, 600);
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectUrl = urlParams.get('redirect');
+      setTimeout(() => { window.location.href = redirectUrl ? decodeURIComponent(redirectUrl) : 'index.html'; }, 600);
     } else {
       showAlert(`❌ ${data.error}`, 'error');
     }
@@ -131,7 +133,9 @@ async function lecturerLogin() {
       localStorage.setItem('user_type', data.user_type);
       localStorage.setItem('user_data', JSON.stringify(data.user_data));
       toast('✅ Login successful! Redirecting...', 'success');
-      setTimeout(() => { window.location.href = 'lecturer_dashboard.html'; }, 600);
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectUrl = urlParams.get('redirect');
+      setTimeout(() => { window.location.href = redirectUrl ? decodeURIComponent(redirectUrl) : 'lecturer_dashboard.html'; }, 600);
     } else {
       showAlert(`❌ ${data.error}`, 'error');
     }
