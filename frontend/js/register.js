@@ -1,6 +1,12 @@
-// Auth guard — redirect to login if not staff
-if (localStorage.getItem("user_type") !== "staff") {
-    window.location.href = "login.html";
+// Auth guard — redirect to login if not staff or lecturer
+const _ut = localStorage.getItem('user_type');
+if (_ut !== 'staff' && _ut !== 'lecturer') {
+    window.location.href = 'login.html';
+}
+
+function logout() {
+  localStorage.clear();
+  window.location.href = 'login.html';
 }
 
 /* ── Register JavaScript ── */
@@ -423,4 +429,5 @@ function handlePhotoUpload(event) {
   // Clear input value so same files can be re-uploaded if reset
   event.target.value = '';
 }
+
 

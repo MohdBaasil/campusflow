@@ -1,6 +1,12 @@
-// Auth guard — redirect to login if not staff
-if (localStorage.getItem("user_type") !== "staff") {
-    window.location.href = "login.html";
+// Auth guard — redirect to login if not staff or lecturer
+const _ut = localStorage.getItem('user_type');
+if (_ut !== 'staff' && _ut !== 'lecturer') {
+    window.location.href = 'login.html';
+}
+
+function logout() {
+  localStorage.clear();
+  window.location.href = 'login.html';
 }
 
 /* ── Reports JavaScript ── */
@@ -160,3 +166,4 @@ function resetFilters() {
 // ── Init ──────────────────────────────────────
 loadSubjectFilter();
 loadRecords();
+
