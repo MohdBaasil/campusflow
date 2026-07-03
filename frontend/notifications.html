@@ -232,7 +232,7 @@
   // Auth control
   document.addEventListener('DOMContentLoaded', () => {
     const userType = localStorage.getItem('user_type');
-    if (userType !== 'lecturer') {
+    if (userType !== 'lecturer' && userType !== 'staff') {
       window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
     }
   });
