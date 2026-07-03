@@ -1,7 +1,12 @@
+/**
+ * dashboard.js — Unified Staff/Lecturer Dashboard
+ * Shows session management, subjects, active sessions and history.
+ */
+
 // Auth guard — redirect to login if not staff or lecturer
-const _ut = localStorage.getItem("user_type");
-if (_ut !== "staff" && _ut !== "lecturer") {
-    window.location.href = "login.html";
+const _ut = localStorage.getItem('user_type');
+if (_ut !== 'staff' && _ut !== 'lecturer') {
+  window.location.href = 'login.html';
 }
 
 function logout() {
@@ -9,241 +14,252 @@ function logout() {
   window.location.href = 'login.html';
 }
 
-/* ── Dashboard JavaScript ── */
-const API = window.location.protocol === 'file:' ? 'http://127.0.0.1:5000/api' : '/api';
-let trendChart, deptChart;
+const API = window.location.protocol === 'file:' ? 'http://127.0.0.1:5000' : '';
+let userData = null;
 
-// ── Toast ─────────────────────────────────────
+// ── Toast ─────────────────────────────────────────────────────────
 function toast(msg, type = 'info') {
-  const tc = document.getElementById('toast-container');
+  const c = document.getElementById('toast-container');
   const t = document.createElement('div');
   t.className = `toast ${type}`;
   const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
-  t.innerHTML = `<span>${icons[type] || 'ℹ️'}</span><span>${msg}</span>`;
-  tc.appendChild(t);
-  setTimeout(() => t.remove(), 4500);
+  t.innerHTML = `<span>${icons[type] || ''}</span><span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3500);
 }
 
-// ── Count-up animation ────────────────────────
-function animateCount(el, target, suffix = '') {
-  if (!el) return;
-  const start = parseInt(el.textContent) || 0;
-  const duration = 800;
-  const step = (timestamp) => {
-    if (!step.startTime) step.startTime = timestamp;
-    const progress = Math.min((timestamp - step.startTime) / duration, 1);
-    const ease = 1 - Math.pow(1 - progress, 3);
-    el.textContent = Math.round(start + (target - start) * ease) + suffix;
-    if (progress < 1) requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
+function showSessionAlert(msg, type = 'error') {
+  document.getElementById('session-alert').innerHTML =
+    `<div class="alert alert-${type}" style="margin-bottom:16px;">${msg}</div>`;
 }
 
-// ── Date display ──────────────────────────────
-function updateDate() {
-  const el = document.getElementById('topbar-date');
-  if (el) el.textContent = new Date().toLocaleDateString('en-IN', {
+// ── Init ──────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Set date
+  document.getElementById('current-date-str').textContent = new Date().toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
-}
 
-// ── Update model status card ──────────────────
-function updateModelCard(trained, numClasses) {
-  const icon = document.getElementById('model-icon');
-  const statusText = document.getElementById('model-status-text');
-  const classesText = document.getElementById('model-classes-text');
-  const banner = document.getElementById('model-banner');
+  // Load user info from localStorage
+  const stored = localStorage.getItem('user_data');
+  const userType = localStorage.getItem('user_type');
 
-  if (trained) {
-    if (icon) icon.textContent = '✅';
-    if (statusText) statusText.textContent = 'Model Trained';
-    if (classesText) classesText.textContent = `${numClasses} identit${numClasses === 1 ? 'y' : 'ies'} learned`;
-    if (banner) banner.style.display = 'none';
-  } else {
-    if (icon) icon.textContent = '⚠️';
-    if (statusText) { statusText.textContent = 'Not Trained'; statusText.style.color = 'var(--orange)'; }
-    if (classesText) classesText.textContent = 'Register students then train';
-    if (banner) banner.style.display = 'flex';
+  if (stored) {
+    userData = JSON.parse(stored);
+
+    if (userType === 'lecturer') {
+      // Lecturer: use their name and department
+      document.getElementById('topbar-welcome').textContent = `Welcome, ${userData.name}`;
+      document.getElementById('hero-user-name').textContent = userData.name;
+      document.getElementById('hero-user-dept').textContent =
+        `Department of ${userData.department} (ID: ${userData.employee_id})`;
+    } else {
+      // Staff admin
+      document.getElementById('topbar-welcome').textContent = `Welcome, ${userData.username || 'Admin'}`;
+      document.getElementById('hero-user-name').textContent = userData.username || 'Administrator';
+      document.getElementById('hero-user-dept').textContent = 'Staff Administrator — CampusFlow';
+    }
   }
-}
 
-// ── Load Dashboard ────────────────────────────
-async function loadDashboard() {
+  loadDashboardData();
+  loadSubjects();
+});
+
+// ── Load Dashboard Stats + Active/Recent Sessions ─────────────────
+async function loadDashboardData() {
   try {
-    const res = await fetch(`${API}/dashboard`);
-    if (!res.ok) throw new Error('Server not reachable');
+    // Build URL depending on user type
+    const userType = localStorage.getItem('user_type');
+    let url = `${API}/api/lecturer/dashboard`;
+    if (userData) {
+      url += userType === 'lecturer'
+        ? `?lecturer_id=${userData.id}`
+        : `?lecturer_id=`; // staff: fetch all sessions
+    }
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Server error');
     const data = await res.json();
 
-    animateCount(document.getElementById('stat-students'), data.total_students);
-    animateCount(document.getElementById('stat-present'), data.present_today);
-    animateCount(document.getElementById('stat-classes'), data.num_classes);
+    // Stats
+    document.getElementById('stat-today-sessions').textContent = data.today_count || 0;
+    document.getElementById('stat-students-count').textContent = data.total_students || 0;
 
-    const rateEl = document.getElementById('stat-rate');
-    if (rateEl) rateEl.textContent = `${data.attendance_rate}% attendance rate`;
+    // Active Sessions
+    const activeBody = document.getElementById('active-sessions-body');
+    activeBody.innerHTML = '';
+    if (data.active_sessions && data.active_sessions.length > 0) {
+      data.active_sessions.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${s.subject_code}</strong> — ${s.subject_name}</td>
+          <td><span class="badge badge-purple">${s.session_type}</span></td>
+          <td>${s.start_time}</td>
+          <td><span class="badge badge-success">Active</span></td>
+          <td>
+            <a href="class_session.html?session_id=${s.id}" class="btn btn-primary btn-sm">
+              📹 Monitor
+            </a>
+          </td>
+        `;
+        activeBody.appendChild(tr);
+      });
+    } else {
+      activeBody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center; color:var(--text-muted); padding:24px;">
+            No active class sessions. Start one above!
+          </td>
+        </tr>
+      `;
+    }
 
-    // Hero numbers
-    animateCount(document.getElementById('hero-students'), data.total_students);
-    animateCount(document.getElementById('hero-present'), data.present_today);
-    const heroRate = document.getElementById('hero-rate');
-    if (heroRate) heroRate.textContent = data.attendance_rate + '%';
+    // Recent Sessions
+    const recentBody = document.getElementById('recent-sessions-body');
+    recentBody.innerHTML = '';
+    const completed = (data.recent_sessions || []).filter(s => s.status === 'completed');
+    if (completed.length > 0) {
+      completed.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${s.date}</td>
+          <td><strong>${s.subject_code}</strong> — ${s.subject_name}</td>
+          <td><span class="badge badge-outline">${s.session_type}</span></td>
+          <td>${s.topic_covered || '<span style="color:var(--text-muted);">Not specified</span>'}</td>
+          <td>${s.start_time} — ${s.end_time || ''}</td>
+          <td><span class="badge badge-blue">${s.attendance_count || 0} Records</span></td>
+        `;
+        recentBody.appendChild(tr);
+      });
+    } else {
+      recentBody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:center; color:var(--text-muted); padding:24px;">
+            No completed sessions in log.
+          </td>
+        </tr>
+      `;
+    }
 
-    updateModelCard(data.model_trained, data.num_classes);
-    renderTrendChart(data.trend);
-    renderDeptChart(data.departments);
   } catch (err) {
-    const alertArea = document.getElementById('alert-area');
-    if (alertArea) alertArea.innerHTML = `
-      <div class="alert alert-error">
-        ❌ Cannot connect to server. Make sure <strong>run.py</strong> is running at port 5000.
-      </div>`;
-    const statusEl = document.getElementById('server-status');
-    if (statusEl) statusEl.textContent = 'Server Offline';
+    console.error('Failed to load dashboard data:', err);
+    toast('❌ Error loading dashboard statistics.', 'error');
   }
 }
 
-// ── Recent Records ────────────────────────────
-async function loadRecentRecords() {
+// ── Load Subjects ─────────────────────────────────────────────────
+async function loadSubjects() {
   try {
-    const res = await fetch(`${API}/attendance/records`);
-    const records = await res.json();
-    const tbody = document.getElementById('recent-tbody');
-    if (!tbody) return;
-    if (!records.length) {
-      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">
-        <div class="empty-icon">📋</div>
-        <div class="empty-title">No records yet</div>
-        <div class="empty-sub">Take attendance to see records here.</div>
-      </div></td></tr>`;
-      return;
+    const userType = localStorage.getItem('user_type');
+    let url = `${API}/api/subjects/list`;
+    if (userData && userData.department) {
+      url += `?department=${encodeURIComponent(userData.department)}`;
     }
-    tbody.innerHTML = records.slice(0, 10).map(r => `
-      <tr>
-        <td><strong>${r.student_name}</strong></td>
-        <td><span class="badge badge-blue">${r.roll_number}</span></td>
-        <td>${r.department}</td>
-        <td>${r.subject}</td>
-        <td>${r.date}</td>
-        <td>${r.time}</td>
-        <td><span class="badge badge-success">✓ ${r.status}</span></td>
-        <td style="color:var(--cyan); font-weight:700;">${r.confidence ? r.confidence + '%' : '–'}</td>
-      </tr>`).join('');
-  } catch (e) { console.error('Records error:', e); }
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Server error');
+    const subjects = await res.json();
+
+    // For lecturer: only their subjects. For staff: show all.
+    const mySubjects = (userType === 'lecturer' && userData)
+      ? subjects.filter(s => s.lecturer_id === userData.id)
+      : subjects;
+
+    document.getElementById('stat-subjects-count').textContent = mySubjects.length;
+
+    // Populate dropdown
+    const select = document.getElementById('session-subject');
+    select.innerHTML = '<option value="">— Select Subject —</option>';
+
+    // Populate table
+    const listBody = document.getElementById('subjects-list-body');
+    listBody.innerHTML = '';
+
+    if (mySubjects.length > 0) {
+      mySubjects.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.code} — ${s.name}`;
+        select.appendChild(opt);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${s.code}</strong></td>
+          <td>${s.name}</td>
+          <td>Semester ${s.semester}</td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="quickStartSubject(${s.id})">
+              🚀 Start
+            </button>
+          </td>
+        `;
+        listBody.appendChild(tr);
+      });
+    } else {
+      listBody.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align:center; color:var(--text-muted); padding:24px;">
+            No subjects assigned. Contact admin.
+          </td>
+        </tr>
+      `;
+    }
+  } catch (err) {
+    console.error('Failed to load subjects:', err);
+    toast('❌ Error loading subjects list.', 'error');
+  }
 }
 
-// ── Charts ────────────────────────────────────
-function renderTrendChart(trend) {
-  const canvas = document.getElementById('trend-chart');
-  if (!canvas) return;
-  if (trendChart) trendChart.destroy();
-
-  const labels = trend.map(t => {
-    const d = new Date(t.date);
-    return d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
-  });
-
-  trendChart = new Chart(canvas.getContext('2d'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Students Present',
-        data: trend.map(t => t.count),
-        borderColor: '#a855f7',
-        backgroundColor: 'rgba(168,85,247,0.08)',
-        fill: true, tension: 0.45,
-        pointBackgroundColor: '#a855f7',
-        pointBorderColor: '#0a0118',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 8
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9490b8', font: { size: 11 } } },
-        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9490b8', font: { size: 11 }, stepSize: 1 }, beginAtZero: true }
-      }
-    }
-  });
+// ── Quick-start a subject ─────────────────────────────────────────
+function quickStartSubject(subjId) {
+  document.getElementById('session-subject').value = subjId;
+  document.getElementById('session-topic').focus();
 }
 
-function renderDeptChart(departments) {
-  const wrapper = document.getElementById('dept-chart-wrapper');
-  const canvas = document.getElementById('dept-chart');
-  if (!canvas) return;
-  if (deptChart) deptChart.destroy();
+// ── Start New Session ─────────────────────────────────────────────
+async function startNewSession() {
+  const subjectId = document.getElementById('session-subject').value;
+  const sessionType = document.getElementById('session-type').value;
+  const topicCovered = document.getElementById('session-topic').value.trim();
 
-  const labels = Object.keys(departments);
-  const values = Object.values(departments);
-
-  if (!labels.length) {
-    if (wrapper) wrapper.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">🏫</div>
-      <div class="empty-title">No students registered</div>
-    </div>`;
+  if (!subjectId) {
+    showSessionAlert('⚠️ Please select a subject first.', 'warning');
     return;
   }
 
-  const colors = ['#a855f7','#4f8ef7','#10b981','#f59e0b','#ec4899','#06b6d4','#ef4444','#8b5cf6'];
-
-  deptChart = new Chart(canvas.getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{
-        data: values,
-        backgroundColor: colors.slice(0, labels.length),
-        borderColor: '#07060f',
-        borderWidth: 3,
-        hoverOffset: 8
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'right', labels: { color: '#9490b8', font: { size: 11 }, padding: 14, boxWidth: 12 } }
-      }
-    }
-  });
-}
-
-// ── Train Model ───────────────────────────────
-async function trainModel() {
-  const btns = [document.getElementById('train-btn'), document.getElementById('train-btn-2')];
-  btns.forEach(b => { if (b) { b.disabled = true; b.innerHTML = '<span class="spinner"></span> Training...'; } });
-
-  const alertArea = document.getElementById('alert-area');
-  if (alertArea) alertArea.innerHTML = `<div class="alert alert-info">⏳ Training ArcFace+SVM model… this may take a few seconds.</div>`;
+  const btn = document.getElementById('start-session-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Starting Session...';
 
   try {
-    const res = await fetch(`${API}/train`, { method: 'POST' });
+    // Use lecturer id if available, otherwise use 1 as default staff
+    const lecturerId = (userData && userData.id) ? userData.id : 1;
+
+    const res = await fetch(`${API}/api/class-sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subject_id: parseInt(subjectId),
+        lecturer_id: lecturerId,
+        topic_covered: topicCovered,
+        session_type: sessionType
+      })
+    });
     const data = await res.json();
 
-    if (alertArea) alertArea.innerHTML = '';
-
     if (data.success) {
-      toast(`🧠 ${data.message}`, 'success');
-      if (alertArea) alertArea.innerHTML = `<div class="alert alert-success">✅ ${data.message}</div>`;
-      setTimeout(() => { if (alertArea) alertArea.innerHTML = ''; }, 5000);
-      loadDashboard();
+      toast('🎥 Class session started successfully!', 'success');
+      setTimeout(() => {
+        window.location.href = `class_session.html?session_id=${data.session.id}`;
+      }, 600);
     } else {
-      toast(`❌ ${data.message}`, 'error');
-      if (alertArea) alertArea.innerHTML = `<div class="alert alert-error">❌ ${data.message}</div>`;
+      showSessionAlert(`❌ ${data.error}`, 'error');
     }
-  } catch (e) {
-    toast('❌ Cannot connect to server.', 'error');
-    if (alertArea) alertArea.innerHTML = `<div class="alert alert-error">❌ Cannot reach server.</div>`;
+  } catch (err) {
+    showSessionAlert('❌ Connection error. Failed to start session.', 'error');
+    console.error(err);
   } finally {
-    btns.forEach(b => {
-      if (b) { b.disabled = false; b.innerHTML = b.id === 'train-btn' ? '🧠 Train Model' : '🧠 Train Model'; }
-    });
+    btn.disabled = false;
+    btn.innerHTML = '🎥 Start Live Camera Session';
   }
 }
-
-// ── Init ──────────────────────────────────────
-updateDate();
-loadDashboard();
-loadRecentRecords();
-setInterval(() => { loadDashboard(); loadRecentRecords(); }, 30000);

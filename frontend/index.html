@@ -4,15 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard – CampusFlow</title>
-  <meta name="description" content="CampusFlow using ArcFace Face Recognition – Live dashboard with attendance stats and trends." />
+  <meta name="description" content="CampusFlow Staff Dashboard – Manage live class sessions, subjects, and attendance." />
   <link rel="stylesheet" href="css/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <div class="layout">
 
   <!-- ── Sidebar ── -->
-    <aside class="sidebar">
+  <aside class="sidebar">
     <div class="sidebar-brand">
       <div class="brand-logo">
         <div class="brand-icon">🎓</div>
@@ -72,154 +71,151 @@
   <div class="main-content">
     <header class="topbar">
       <div class="topbar-title">
-        <h1>Dashboard</h1>
-        <p id="topbar-date">Loading...</p>
+        <h1 id="topbar-welcome">Welcome</h1>
+        <p id="current-date-str"></p>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-primary btn-sm" id="train-btn" onclick="trainModel()">
-          🧠 Train Model
-        </button>
+        <div class="status-badge">
+          <span class="status-dot"></span>
+          <span>Session Active</span>
+        </div>
       </div>
     </header>
 
-    <main class="page-content">
+    <!-- Page Content -->
+    <div class="page-content">
 
-      <!-- Hero -->
-      <div class="hero-section">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:20px;">
-          <div>
-            <div class="hero-title">CampusFlow Attendance System</div>
-            <div class="hero-sub">Powered by InsightFace (ArcFace) + SVM Face Recognition</div>
-            <div class="hero-stats">
-              <div class="hero-stat">
-                <div class="hero-stat-val" id="hero-students">–</div>
-                <div class="hero-stat-label">Students</div>
-              </div>
-              <div class="hero-stat">
-                <div class="hero-stat-val" id="hero-present">–</div>
-                <div class="hero-stat-label">Present Today</div>
-              </div>
-              <div class="hero-stat">
-                <div class="hero-stat-val" id="hero-rate">–%</div>
-                <div class="hero-stat-label">Attendance Rate</div>
-              </div>
-            </div>
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div>
+          <h2 class="hero-title" id="hero-user-name">Loading...</h2>
+          <p class="hero-sub" id="hero-user-dept"></p>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-stat-val" id="stat-subjects-count">0</div>
+            <div class="hero-stat-label">Subjects</div>
           </div>
-          <div id="model-status-card" style="
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(139,92,246,0.25);
-            border-radius: 16px;
-            padding: 20px 24px;
-            min-width: 200px;
-            text-align:center;
-          ">
-            <div style="font-size: 36px; margin-bottom:8px;" id="model-icon">⏳</div>
-            <div style="font-size:13px; font-weight:700; color:var(--text-primary);" id="model-status-text">Checking...</div>
-            <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;" id="model-classes-text"></div>
-            <button class="btn btn-primary btn-sm" style="margin-top:12px; width:100%;" onclick="trainModel()" id="train-btn-2">
-              🧠 Train Model
-            </button>
+          <div class="hero-stat">
+            <div class="hero-stat-val" id="stat-today-sessions">0</div>
+            <div class="hero-stat-label">Sessions Today</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-val" id="stat-students-count">0</div>
+            <div class="hero-stat-label">Students</div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div id="alert-area"></div>
-
-      <!-- Workflow Quick Actions -->
-      <div class="workflow-grid">
-        <a href="register.html" class="workflow-card">
-          <div class="workflow-icon">👤</div>
-          <div class="workflow-title">Register Student</div>
-          <div class="workflow-desc">Capture face photos to enroll</div>
-        </a>
-        <div class="workflow-card" onclick="trainModel()" style="cursor:pointer;">
-          <div class="workflow-icon">🧠</div>
-          <div class="workflow-title">Train Model</div>
-          <div class="workflow-desc">Build ArcFace+SVM classifier</div>
-        </div>
-        <a href="reports.html" class="workflow-card">
-          <div class="workflow-icon">📋</div>
-          <div class="workflow-title">View Reports</div>
-          <div class="workflow-desc">Filter & export records</div>
-        </a>
-      </div>
-
-      <!-- Stats Grid -->
-      <div class="stats-grid">
-        <div class="stat-card purple">
-          <div class="stat-icon purple">👥</div>
-          <div class="stat-value" id="stat-students">–</div>
-          <div class="stat-label">Total Students</div>
-          <div class="stat-sub">Registered in system</div>
-        </div>
-        <div class="stat-card green">
-          <div class="stat-icon green">✅</div>
-          <div class="stat-value" id="stat-present">–</div>
-          <div class="stat-label">Present Today</div>
-          <div class="stat-sub" id="stat-rate">0% attendance rate</div>
-        </div>
-        <div class="stat-card blue">
-          <div class="stat-icon blue">🧠</div>
-          <div class="stat-value" id="stat-classes">–</div>
-          <div class="stat-label">Model Classes</div>
-          <div class="stat-sub">Trained identities</div>
-        </div>
-        <div class="stat-card orange">
-          <div class="stat-icon orange">📚</div>
-          <div class="stat-value">8</div>
-          <div class="stat-label">Subjects</div>
-          <div class="stat-sub">Available subjects</div>
-        </div>
-      </div>
-
-      <!-- Charts -->
+      <!-- Grid: Start Session + Subjects List -->
       <div class="grid-2" style="margin-bottom: 28px;">
+
+        <!-- Start Session Card -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">📈 Attendance Trend (Last 7 Days)</div>
+            <h3 class="card-title">🚀 Start New Class Session</h3>
           </div>
-          <div class="chart-container">
-            <canvas id="trend-chart"></canvas>
+          <div id="session-alert"></div>
+
+          <div class="form-group">
+            <label class="form-label" for="session-subject">Select Subject</label>
+            <select class="form-control" id="session-subject">
+              <option value="">— Select Subject —</option>
+            </select>
           </div>
+
+          <div class="form-group">
+            <label class="form-label" for="session-type">Session Type</label>
+            <select class="form-control" id="session-type">
+              <option>Lecture</option>
+              <option>Lab</option>
+              <option>Tutorial</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="session-topic">Topic to Cover</label>
+            <input class="form-control" type="text" id="session-topic" placeholder="e.g. Introduction to Database Normalization" />
+          </div>
+
+          <button class="btn btn-primary" id="start-session-btn" onclick="startNewSession()" style="width: 100%;">
+            🎥 Start Live Camera Session
+          </button>
         </div>
+
+        <!-- Subjects List Card -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">🏫 Department Distribution</div>
+            <h3 class="card-title">📚 My Subjects</h3>
           </div>
-          <div class="chart-container" id="dept-chart-wrapper">
-            <canvas id="dept-chart"></canvas>
+          <div class="table-wrapper" style="max-height: 280px; overflow-y: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Subject Name</th>
+                  <th>Sem</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="subjects-list-body">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
           </div>
         </div>
+
       </div>
 
-      <!-- Recent Records -->
-      <div class="card">
+      <!-- Active Sessions -->
+      <div class="card" style="margin-bottom: 28px;">
         <div class="card-header">
-          <div class="card-title">🕐 Recent Attendance</div>
-          <a href="reports.html" class="btn btn-outline btn-sm">View All →</a>
+          <h3 class="card-title">⏱️ Active Class Sessions</h3>
+          <button class="btn btn-outline btn-sm" onclick="loadDashboardData()">🔄 Refresh</button>
         </div>
         <div class="table-wrapper">
           <table>
             <thead>
               <tr>
-                <th>Student</th><th>Roll No.</th><th>Department</th>
-                <th>Subject</th><th>Date</th><th>Time</th><th>Status</th><th>Confidence</th>
+                <th>Subject</th>
+                <th>Type</th>
+                <th>Started At</th>
+                <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
-            <tbody id="recent-tbody">
-              <tr><td colspan="8">
-                <div class="empty-state">
-                  <div class="empty-icon">📋</div>
-                  <div class="empty-title">No records yet</div>
-                  <div class="empty-sub">Start taking attendance to see records here.</div>
-                </div>
-              </td></tr>
+            <tbody id="active-sessions-body">
+              <!-- Loaded dynamically -->
             </tbody>
           </table>
         </div>
       </div>
 
-    </main>
+      <!-- Recent Session History -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">📄 Recent Session History</h3>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Subject</th>
+                <th>Type</th>
+                <th>Topic Covered</th>
+                <th>Time</th>
+                <th>Records</th>
+              </tr>
+            </thead>
+            <tbody id="recent-sessions-body">
+              <!-- Loaded dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
 
