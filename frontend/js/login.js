@@ -40,7 +40,7 @@ function switchStudentView(view) {
     stopStuLoginCamera();
   } else {
     stopRegCamera();
-    switchStudentLoginMode('face');
+    switchStudentLoginMode('password');
   }
 }
 

@@ -252,7 +252,6 @@ async function captureAndVerify() {
       toast('📷 Waiting for camera feed...', 'warning');
       return;
     }
-    // Draw onto canvas
     canvas.width = video.videoWidth || 640;
     canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext('2d');
@@ -265,7 +264,6 @@ async function captureAndVerify() {
   btnCapture.textContent = '⚡ Verifying...';
 
   try {
-    // Call student verify endpoint
     const response = await fetch(`${API}/attendance/student/verify`, {
       method: 'POST',
       headers: {
@@ -283,7 +281,6 @@ async function captureAndVerify() {
     stopCamera();
 
     if (response.ok && data.verified) {
-      // Success screen
       document.getElementById('success-name').textContent = data.student.name;
       document.getElementById('success-roll').textContent = data.student.roll_number;
       document.getElementById('success-subject').textContent = data.subject;
@@ -297,7 +294,6 @@ async function captureAndVerify() {
       showScreen('screen-success');
       toast('✅ Check-in successful!', 'success');
     } else {
-      // Failure screen
       document.getElementById('failure-msg').textContent = data.error || 'Verification failed. Please ensure clear lighting and try again.';
       showScreen('screen-failure');
       toast('❌ Verification Failed', 'error');

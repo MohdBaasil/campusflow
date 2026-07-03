@@ -85,6 +85,22 @@ function loadStudentProfile() {
   document.getElementById('standing-phone').textContent = studentData.phone || 'None';
   document.getElementById('standing-alt-phone').textContent = studentData.alt_phone || 'None';
   document.getElementById('standing-year').textContent = studentData.year_of_admission || 'N/A';
+
+  // Load student profile picture dynamically from the backend
+  const imgEl = document.getElementById('student-profile-img');
+  const placeholderEl = document.getElementById('student-profile-placeholder');
+  if (imgEl && placeholderEl && studentData.id) {
+    // Append unique timestamp to prevent browser image caching
+    imgEl.src = `${API}/api/students/${studentData.id}/face-photo?t=${Date.now()}`;
+    imgEl.onload = () => {
+      imgEl.style.display = 'block';
+      placeholderEl.style.display = 'none';
+    };
+    imgEl.onerror = () => {
+      imgEl.style.display = 'none';
+      placeholderEl.style.display = 'block';
+    };
+  }
 }
 
 // Fetch cumulative attendance stats
@@ -360,4 +376,42 @@ async function saveProfileSettings() {
     console.error(err);
     toast('❌ Network error updating profile settings.', 'error');
   }
+}
+
+// Trigger hidden file picker
+function triggerProfilePicUpload() {
+  document.getElementById('profile-pic-input').click();
+}
+
+// Upload the chosen image file to the backend
+async function uploadProfilePic(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const base64Data = e.target.result;
+    
+    toast('⚡ Uploading and processing face photo...', 'info');
+    try {
+      const res = await fetch(`${API}/api/students/${studentData.id}/upload-profile-pic`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Data })
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        toast('✅ Profile picture updated successfully!', 'success');
+        // Reload student profile to show the new picture
+        loadStudentProfile();
+      } else {
+        toast(`❌ Failed to update picture: ${data.error || 'No face detected'}`, 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      toast('❌ Server connection error uploading profile picture.', 'error');
+    }
+  };
+  reader.readAsDataURL(file);
 }

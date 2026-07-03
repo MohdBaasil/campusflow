@@ -1,5 +1,5 @@
 """
-Database models and manager for the Smart Attendance System / College Management System.
+Database models and manager for CampusFlow / College Management System.
 """
 from sqlalchemy import create_engine, Column, Integer, String, Float, Date, Time, DateTime, ForeignKey, LargeBinary, Text, text, Boolean
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship

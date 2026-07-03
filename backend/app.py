@@ -1,5 +1,5 @@
 """
-Flask REST API for the Smart Attendance System.
+Flask REST API for CampusFlow.
 """
 import os
 import sys
@@ -43,7 +43,6 @@ STAFF_CREDENTIALS = {
     'admin': hashlib.sha256('admin123'.encode()).hexdigest()
 }
 ACTIVE_TOKENS = {}  # token -> { user_type, user_data, created_at }
-
 def get_local_ip():
     """Get the local network IP address of the server."""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -202,6 +201,7 @@ def login_face():
     data = request.json or {}
     roll_number = data.get('roll_number', '').strip().upper()
     image_data = data.get('image')
+    is_file_upload = data.get('is_file_upload', False)
 
     if not roll_number:
         return jsonify({'success': False, 'error': 'Roll number is required.'}), 400
@@ -221,11 +221,6 @@ def login_face():
         embedding, bbox = detector.preprocess_for_training(frame)
         if embedding is None:
             return jsonify({'success': False, 'error': 'No face detected. Please ensure clear lighting and try again.'}), 400
-
-        # Liveness check (Anti-spoofing / Proxy detection)
-        is_live, liveness_score, liveness_msg = detector.detect_liveness(frame, bbox)
-        if not is_live:
-            return jsonify({'success': False, 'error': liveness_msg}), 400
 
         embeddings = db.query(FaceEmbedding).filter(FaceEmbedding.student_id == student.id).all()
         if not embeddings:
@@ -684,6 +679,78 @@ def get_student_qrcode(student_id):
 
 
 # ─────────────────────────────────────────────
+# STUDENT PROFILE PICTURE SERVING / UPLOADING
+# ─────────────────────────────────────────────
+@app.route('/api/students/<int:student_id>/face-photo', methods=['GET'])
+def get_student_face_photo(student_id):
+    """Serve the first registered face photo for the student."""
+    known_faces_dir = os.path.join(BASE_DIR, 'data', 'known_faces', str(student_id))
+    if not os.path.exists(known_faces_dir):
+        return jsonify({'error': 'Face photo folder not found'}), 404
+        
+    for f in os.listdir(known_faces_dir):
+        if f.lower().endswith(('.jpg', '.jpeg', '.png')):
+            filepath = os.path.join(known_faces_dir, f)
+            mimetype = 'image/jpeg'
+            if f.lower().endswith('.png'):
+                mimetype = 'image/png'
+            return send_file(filepath, mimetype=mimetype)
+            
+    return jsonify({'error': 'No face photo found in folder'}), 404
+
+
+@app.route('/api/students/<int:student_id>/upload-profile-pic', methods=['POST'])
+def upload_profile_pic_api(student_id):
+    """Allow student to set/update their profile face photo."""
+    db = get_db()
+    try:
+        data = request.json or {}
+        image_data = data.get('image')
+        if not image_data:
+            return jsonify({'error': 'No image data provided.'}), 400
+            
+        student = db.query(Student).filter(Student.id == student_id).first()
+        if not student:
+            return jsonify({'error': 'Student not found.'}), 404
+            
+        frame = decode_image(image_data)
+        if frame is None:
+            return jsonify({'error': 'Invalid image format.'}), 400
+            
+        embedding, bbox = detector.preprocess_for_training(frame)
+        if embedding is None:
+            return jsonify({'error': 'No face detected in the image. Please upload a clear photo of your face.'}), 400
+            
+        # Clear existing embeddings for this student
+        db.query(FaceEmbedding).filter(FaceEmbedding.student_id == student.id).delete()
+        
+        # Clear existing photo folder contents
+        student_dir = os.path.join(KNOWN_FACES_DIR, str(student.id))
+        import shutil
+        if os.path.exists(student_dir):
+            shutil.rmtree(student_dir, ignore_errors=True)
+        os.makedirs(student_dir, exist_ok=True)
+        student.photo_dir = student_dir
+        
+        # Save new photo as face_1.jpg
+        img_path = os.path.join(student_dir, 'face_1.jpg')
+        cv2.imwrite(img_path, frame)
+        
+        # Save embedding to DB
+        embedding_bytes = embedding.astype(np.float32).tobytes()
+        face_emb = FaceEmbedding(student_id=student.id, embedding=embedding_bytes)
+        db.add(face_emb)
+        
+        db.commit()
+        return jsonify({'success': True, 'message': 'Profile picture updated successfully.'})
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': f'Failed to upload profile picture: {str(e)}'}), 500
+    finally:
+        db.close()
+
+
+# ─────────────────────────────────────────────
 # BULK REGISTRATION (GOOGLE FORM)
 # ─────────────────────────────────────────────
 @app.route('/api/register/bulk', methods=['POST'])
@@ -1057,6 +1124,7 @@ def verify_student_attendance():
         image_data = data.get('image')
         token = data.get('token', '').strip()
         subject = data.get('subject', '').strip()
+        is_file_upload = data.get('is_file_upload', False)
 
         if not all([roll_number, image_data, token, subject]):
             return jsonify({'error': 'Roll number, image, token, and subject are required.'}), 400
@@ -1099,11 +1167,6 @@ def verify_student_attendance():
         embedding, bbox = detector.preprocess_for_training(frame)
         if embedding is None:
             return jsonify({'error': 'No face detected. Please look straight into your front camera with good lighting.'}), 400
-
-        # Liveness check (Anti-spoofing / Proxy detection)
-        is_live, liveness_score, liveness_msg = detector.detect_liveness(frame, bbox)
-        if not is_live:
-            return jsonify({'error': liveness_msg}), 400
 
         # Retrieve Registered Embeddings
         embeddings = db.query(FaceEmbedding).filter(FaceEmbedding.student_id == student.id).all()
@@ -2708,11 +2771,11 @@ def send_custom_notification():
                     <div style="background: white; padding: 20px; border-radius: 0 0 12px 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                         <p>Dear {student.name},</p>
                         <p>{message}</p>
-                        <p style="color: #777; font-size: 13px;">— Smart Attendance System</p>
+                        <p style="color: #777; font-size: 13px;">— CampusFlow Attendance System</p>
                     </div>
                 </body></html>
                 """
-                send_email_async(student.email, f'Notification — Smart Attendance', html_body)
+                send_email_async(student.email, f'Notification — CampusFlow', html_body)
                 sent_count += 1
 
         db.commit()
@@ -2745,11 +2808,11 @@ def resend_notification(notif_id):
             <div style="background: white; padding: 20px; border-radius: 0 0 12px 12px;">
                 <p>Dear {student.name},</p>
                 <p>{notif.message}</p>
-                <p style="color: #777; font-size: 13px;">— Smart Attendance System</p>
+                <p style="color: #777; font-size: 13px;">— CampusFlow Attendance System</p>
             </div>
         </body></html>
         """
-        send_email_async(student.email, f'Notification — Smart Attendance', html_body)
+        send_email_async(student.email, f'Notification — CampusFlow', html_body)
         notif.status = 'sent'
         notif.sent_at = datetime.utcnow()
         db.commit()

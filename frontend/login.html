@@ -3,33 +3,187 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login – Smart Attendance System</title>
-  <meta name="description" content="Login to the Smart Attendance System — Staff Admin or Student portal." />
+  <title>Login – CampusFlow</title>
+  <meta name="description" content="Login to CampusFlow — Staff Admin or Student portal." />
   <link rel="stylesheet" href="css/style.css" />
   <style>
     body {
+      display: block;
+      padding: 0;
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    /* Split Layout Wrapper */
+    .login-wrapper {
+      display: flex;
+      min-height: 100vh;
+      width: 100%;
+      background: var(--bg-base);
+    }
+    
+    /* Left Panel: Branding & Visuals */
+    .login-brand-panel {
+      flex: 1.1;
+      background: linear-gradient(135deg, #0e0c1a 0%, #07060f 100%);
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
-      min-height: 100vh;
+      padding: 60px;
+      overflow: hidden;
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
     }
-    .login-container {
-      width: 100%;
-      max-width: 520px;
-      margin: 0 auto;
+    
+    /* Glowing Orbs */
+    .brand-glow-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      opacity: 0.15;
     }
+    .orb-1 {
+      top: -100px; left: -100px;
+      width: 400px; height: 400px;
+      background: var(--purple);
+    }
+    .orb-2 {
+      bottom: -150px; right: -50px;
+      width: 500px; height: 500px;
+      background: var(--blue);
+    }
+    
+    .brand-panel-content {
+      position: relative;
+      z-index: 2;
+      max-width: 540px;
+    }
+    
+    .brand-panel-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px; height: 72px;
+      background: var(--grad-brand);
+      border-radius: 20px;
+      font-size: 36px;
+      margin-bottom: 24px;
+      box-shadow: var(--glow-purple);
+    }
+    
+    .brand-panel-title {
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #ffffff 40%, #c4b5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    
+    .brand-panel-tagline {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 48px;
+      font-weight: 500;
+    }
+    
+    .brand-features {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    
+    .feature-item {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    
+    .feature-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px; height: 48px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      font-size: 20px;
+      color: var(--purple);
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .feature-text h4 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    
+    .feature-text p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    
+    /* Right Panel: Forms */
+    .login-form-panel {
+      flex: 0.9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      position: relative;
+    }
+    
+    /* Mobile Brand (hidden on desktop) */
+    .mobile-brand {
+      display: none;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    
+    .mobile-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px; height: 56px;
+      background: var(--grad-brand);
+      border-radius: 16px;
+      font-size: 28px;
+      margin-bottom: 12px;
+      box-shadow: var(--glow-purple);
+    }
+    
+    .mobile-title {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #ffffff 40%, #c4b5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    /* Card design */
     .login-card {
-      background: rgba(14,12,26,0.95);
-      border: 1px solid rgba(139,92,246,0.2);
-      border-radius: var(--radius-xl);
+      width: 100%;
+      max-width: 480px;
+      background: rgba(20, 18, 35, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
       padding: 0;
-      box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 60px rgba(139,92,246,0.08);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 60px rgba(139,92,246,0.05);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       position: relative;
       overflow: hidden;
     }
+    
     .login-card::before {
       content: '';
       position: absolute;
@@ -37,270 +191,449 @@
       height: 3px;
       background: var(--grad-brand);
     }
-    .login-card::after {
-      content: '';
-      position: absolute;
-      top: -60px; right: -60px;
-      width: 180px; height: 180px;
-      border-radius: 50%;
-      background: rgba(139,92,246,0.1);
-      filter: blur(30px);
-      pointer-events: none;
-    }
-
-    /* Header */
+    
+    /* Header (desktop only logo) */
     .login-header {
       text-align: center;
-      padding: 36px 32px 24px;
-      position: relative;
-      z-index: 1;
+      padding: 32px 32px 16px;
     }
+    
     .login-logo {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 64px; height: 64px;
+      width: 56px; height: 56px;
       background: var(--grad-brand);
-      border-radius: 18px;
-      font-size: 30px;
-      margin-bottom: 18px;
+      border-radius: 16px;
+      font-size: 26px;
+      margin-bottom: 12px;
       box-shadow: var(--glow-purple);
     }
+    
     .login-title {
-      font-size: 24px;
+      font-size: 26px;
       font-weight: 900;
       letter-spacing: -0.6px;
       background: linear-gradient(135deg, #fff 30%, #c4b5fd 70%, #93c5fd 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 4px;
     }
-    .login-subtitle {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-
-    /* Tabs */
+    
+    /* Tabs styling (glassmorphism track with pills) */
     .login-tabs {
       display: flex;
-      border-bottom: 1px solid var(--border);
-      position: relative;
-      z-index: 1;
+      padding: 6px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      gap: 4px;
     }
+    
     .login-tab {
       flex: 1;
-      padding: 14px;
+      padding: 12px;
       text-align: center;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: var(--transition);
-      border-bottom: 3px solid transparent;
-      background: none;
-      border-top: none; border-left: none; border-right: none;
-      font-family: inherit;
-    }
-    .login-tab:hover { color: var(--text-secondary); }
-    .login-tab.active {
-      color: var(--purple);
-      border-bottom-color: var(--purple);
-      background: rgba(139,92,246,0.05);
-    }
-
-    /* Body */
-    .login-body {
-      padding: 28px 32px 32px;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Pane */
-    .tab-pane { display: none; }
-    .tab-pane.active { display: block; animation: fadeIn 0.3s ease; }
-
-    /* Sub-tabs for student */
-    .sub-toggle {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-    .sub-toggle-btn {
-      flex: 1;
-      padding: 10px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-secondary);
       font-size: 13px;
       font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+      border-radius: 12px;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    
+    .login-tab:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    
+    .login-tab.active {
+      color: #fff;
+      background: var(--grad-brand);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    
+    /* Forms structure */
+    .login-body {
+      padding: 32px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      transition: var(--transition);
+    }
+    
+    .form-control:focus {
+      outline: none;
+      border-color: var(--purple);
+      background: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    }
+    
+    /* Sub toggles */
+    .sub-toggle {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 24px;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+    
+    .sub-toggle-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 700;
       font-family: inherit;
       cursor: pointer;
       transition: var(--transition);
     }
-    .sub-toggle-btn.active {
-      background: rgba(139,92,246,0.12);
-      border-color: rgba(139,92,246,0.4);
-      color: var(--purple);
+    
+    .sub-toggle-btn:hover {
+      color: var(--text-primary);
     }
-
-    /* Wizard steps */
+    
+    .sub-toggle-btn.active {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--purple);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+    
+    /* Pane animations */
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    
     .wizard-step { display: none; }
-    .wizard-step.active { display: block; animation: fadeIn 0.3s ease; }
-
+    .wizard-step.active { display: block; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
+      from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
-    /* Capture guides */
+    
+    /* Camera Scanner Box - Sci-Fi Scanner style */
+    .camera-box {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #020205;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      aspect-ratio: 4/3;
+      margin-bottom: 20px;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+    }
+    
+    .camera-box video, .camera-box canvas {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    
+    /* High-tech Face Recognition Scanner HUD */
+    .camera-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+    
+    .scan-line {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--purple), transparent);
+      box-shadow: 0 0 10px var(--purple);
+      animation: scan 3s linear infinite;
+    }
+    
+    @keyframes scan {
+      0% { top: 0%; }
+      50% { top: 100%; }
+      100% { top: 0%; }
+    }
+    
+    .camera-corner {
+      position: absolute;
+      width: 20px; height: 20px;
+      border: 2px solid var(--purple);
+    }
+    .corner-tl { top: 16px; left: 16px; border-right: none; border-bottom: none; }
+    .corner-tr { top: 16px; right: 16px; border-left: none; border-bottom: none; }
+    .corner-bl { bottom: 16px; left: 16px; border-right: none; border-top: none; }
+    .corner-br { bottom: 16px; right: 16px; border-left: none; border-top: none; }
+    
+    .camera-status {
+      position: absolute;
+      bottom: 16px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 8, 20, 0.85);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      padding: 6px 14px;
+      border-radius: 30px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--purple);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    
+    .camera-status::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--purple);
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0.3; transform: scale(0.8); }
+    }
+    
+    .pose-instruction {
+      text-align: center;
+      padding: 12px;
+      background: rgba(139, 92, 246, 0.08);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--purple);
+      margin-bottom: 16px;
+    }
+    
+    /* Pose guides chips */
     .pose-guides {
       display: flex;
       gap: 6px;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
+    
     .pose-chip {
       flex: 1;
-      padding: 6px 4px;
-      border-radius: 8px;
+      padding: 8px 4px;
+      border-radius: 10px;
       text-align: center;
       font-size: 10px;
       font-weight: 700;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--text-secondary);
       transition: var(--transition);
     }
+    
     .pose-chip.active {
       background: rgba(139,92,246,0.15);
       border-color: rgba(139,92,246,0.4);
       color: var(--purple);
+      box-shadow: 0 4px 12px rgba(139,92,246,0.15);
     }
+    
     .pose-chip.done {
       background: rgba(16,185,129,0.12);
       border-color: rgba(16,185,129,0.3);
       color: var(--green);
     }
-    .pose-emoji { font-size: 16px; display: block; margin-bottom: 2px; }
-
-    .camera-box {
-      position: relative;
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      background: #000;
-      border: 1px solid var(--border);
-      aspect-ratio: 4/3;
-      margin-bottom: 14px;
-    }
-    .camera-box video, .camera-box canvas {
-      width: 100%; height: 100%; object-fit: cover;
-    }
-
-    .pose-instruction {
-      text-align: center;
-      padding: 10px;
-      background: rgba(139,92,246,0.08);
-      border: 1px solid rgba(139,92,246,0.2);
-      border-radius: var(--radius-sm);
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--purple);
-      margin-bottom: 14px;
-    }
-
-    /* Drop zone */
+    
+    .pose-emoji { font-size: 14px; display: block; margin-bottom: 4px; }
+    
+    /* Drop Zone Document upload */
     .drop-zone {
-      border: 2px dashed rgba(139,92,246,0.3);
-      border-radius: var(--radius-md);
-      padding: 28px 20px;
+      border: 2px dashed rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 30px 20px;
       text-align: center;
       cursor: pointer;
       transition: var(--transition);
-      margin-bottom: 14px;
-      background: rgba(139,92,246,0.03);
+      margin-bottom: 16px;
+      background: rgba(255, 255, 255, 0.01);
     }
+    
     .drop-zone:hover {
       border-color: var(--purple);
-      background: rgba(139,92,246,0.06);
+      background: rgba(139,92,246,0.04);
     }
+    
     .drop-zone.filled {
       border-color: var(--green);
       border-style: solid;
-      background: rgba(16,185,129,0.05);
+      background: rgba(16,185,129,0.04);
     }
-    .drop-zone-icon { font-size: 28px; margin-bottom: 8px; }
-    .drop-zone-text { font-size: 12px; color: var(--text-muted); font-weight: 600; }
-    .drop-zone-file { font-size: 12px; color: var(--green); font-weight: 700; margin-top: 6px; }
-
-    /* Success screen */
-    .success-icon {
-      font-size: 72px;
-      text-align: center;
+    
+    .drop-zone-icon { font-size: 32px; margin-bottom: 8px; }
+    .drop-zone-text { font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+    .drop-zone-file { font-size: 12px; color: var(--green); font-weight: 700; margin-top: 8px; }
+    
+    /* Progress bar */
+    .progress-bar-wrapper {
+      height: 4px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 2px;
+      overflow: hidden;
       margin-bottom: 16px;
+    }
+    
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--grad-brand);
+      transition: width 0.3s ease;
+    }
+    
+    /* Success Page */
+    .success-icon {
+      font-size: 80px;
+      text-align: center;
+      margin-bottom: 20px;
       animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    @keyframes popIn {
-      0% { transform: scale(0.3); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-
-    /* Wizard step bar */
+    
+    /* Wizard Steps Navigation indicators */
     .reg-steps {
       display: flex;
       align-items: center;
       gap: 0;
-      margin-bottom: 24px;
+      margin-bottom: 28px;
     }
+    
     .reg-step {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
+    
     .reg-step-num {
-      width: 28px; height: 28px;
+      width: 24px; height: 24px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.06);
-      border: 2px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
       display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 800;
-      color: var(--text-muted);
+      font-size: 11px; font-weight: 800;
+      color: var(--text-secondary);
       flex-shrink: 0;
       transition: var(--transition);
     }
+    
     .reg-step.active .reg-step-num {
       background: var(--grad-brand);
       border-color: transparent;
       color: #fff;
-      box-shadow: 0 0 12px rgba(139,92,246,0.4);
+      box-shadow: 0 0 10px rgba(139,92,246,0.3);
     }
+    
     .reg-step.done .reg-step-num {
       background: var(--grad-green);
       border-color: transparent;
       color: #fff;
     }
-    .reg-step-label { font-size: 11px; font-weight: 600; color: var(--text-muted); }
-    .reg-step.active .reg-step-label { color: var(--text-primary); }
+    
+    .reg-step-label { font-size: 10px; font-weight: 700; color: var(--text-secondary); }
+    .reg-step.active .reg-step-label { color: #fff; }
     .reg-step.done .reg-step-label { color: var(--green); }
+    
     .reg-step-line {
       height: 1px;
-      background: var(--border);
+      background: rgba(255, 255, 255, 0.08);
       flex: 1;
-      margin: 0 6px;
+      margin: 0 4px;
+    }
+    
+    /* Responsive styling */
+    @media (max-width: 900px) {
+      .login-brand-panel { display: none; }
+      .mobile-brand { display: block; }
+      .login-form-panel { flex: 1; padding: 24px 16px; }
+      .login-header { display: none; }
     }
   </style>
 </head>
 <body>
 
-<div class="login-container">
-  <div class="login-card">
-
-    <!-- Header -->
-    <div class="login-header">
-      <div class="login-logo">🎓</div>
-      <div class="login-title">SmartAttend</div>
-      <div class="login-subtitle">ArcFace Face Recognition Attendance System</div>
+<div class="login-wrapper">
+  <!-- Left Side: Branding Panel (Desktop Only) -->
+  <div class="login-brand-panel">
+    <div class="brand-glow-orb orb-1"></div>
+    <div class="brand-glow-orb orb-2"></div>
+    <div class="brand-panel-content">
+      <div class="brand-panel-logo">🎓</div>
+      <h1 class="brand-panel-title">CAMPUSFLOW</h1>
+      <p class="brand-panel-tagline">Next-Generation Face-Verified Attendance System</p>
+      
+      <div class="brand-features">
+        <div class="feature-item">
+          <div class="feature-icon">🤳</div>
+          <div class="feature-text">
+            <h4>Facial Recognition Login</h4>
+            <p>Verification in milliseconds using state-of-the-art ArcFace (InsightFace) deep learning models.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🛡️</div>
+          <div class="feature-text">
+            <h4>Advanced Anti-Spoofing</h4>
+            <p>Verification protocol requiring multi-angle pose verification (Smile, Left, Right, Up) to prevent spoofing.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📊</div>
+          <div class="feature-text">
+            <h4>Live Dashboard Logs</h4>
+            <p>Access attendance records, statistics, internal marks, and real-time class session QR codes in one integrated hub.</p>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Right Side: Forms Card -->
+  <div class="login-form-panel">
+    <div class="login-card">
+
+      <!-- Header for Desktop inside card (No subtitle) -->
+      <div class="login-header">
+        <div class="login-logo">🎓</div>
+        <div class="login-title">CAMPUSFLOW</div>
+      </div>
+
+      <!-- Mobile Brand Header (Visible only on mobile/tablet) -->
+      <div class="mobile-brand">
+        <div class="mobile-logo">🎓</div>
+        <div class="mobile-title">CAMPUSFLOW</div>
+      </div>
 
     <!-- Tabs -->
     <div class="login-tabs">
@@ -412,12 +745,12 @@
         <!-- Student Login -->
         <div id="student-login-view">
           <div style="display:flex; gap:8px; margin-bottom:16px;">
-            <button class="sub-toggle-btn active" id="btn-stu-face-login" onclick="switchStudentLoginMode('face')" style="padding: 8px; font-size: 12px;">🤳 Face Login</button>
-            <button class="sub-toggle-btn" id="btn-stu-pass-login" onclick="switchStudentLoginMode('password')" style="padding: 8px; font-size: 12px;">🔑 Password Login</button>
+            <button class="sub-toggle-btn" id="btn-stu-face-login" onclick="switchStudentLoginMode('face')" style="padding: 8px; font-size: 12px;">🤳 Face Login</button>
+            <button class="sub-toggle-btn active" id="btn-stu-pass-login" onclick="switchStudentLoginMode('password')" style="padding: 8px; font-size: 12px;">🔑 Password Login</button>
           </div>
 
           <!-- Face Login Pane -->
-          <div id="stu-face-login-pane">
+          <div id="stu-face-login-pane" style="display:none;">
             <div class="form-group">
               <label class="form-label" for="stu-roll">Roll Number / USN</label>
               <input class="form-control" type="text" id="stu-roll" placeholder="e.g. 23BTRCL110" style="text-transform:uppercase;" />
@@ -450,7 +783,7 @@
           </div>
 
           <!-- Password Login Pane -->
-          <div id="stu-pass-login-pane" style="display:none;">
+          <div id="stu-pass-login-pane">
             <div class="form-group">
               <label class="form-label" for="stu-roll-pass">Roll Number / USN</label>
               <input class="form-control" type="text" id="stu-roll-pass" placeholder="e.g. 23BTRCL110" style="text-transform:uppercase;" />
@@ -599,9 +932,10 @@
         </div>
       </div>
 
-    </div>
-  </div>
-</div>
+    </div> <!-- /login-body -->
+  </div> <!-- /login-card -->
+ </div> <!-- /login-form-panel -->
+</div> <!-- /login-wrapper -->
 
 <div class="toast-container" id="toast-container"></div>
 <script src="js/login.js"></script>
