@@ -1624,6 +1624,105 @@ def get_subjects():
 # ─────────────────────────────────────────────
 # LECTURER MANAGEMENT
 # ─────────────────────────────────────────────
+@app.route('/api/lecturers', methods=['POST'])
+def create_lecturer():
+    """Create a new lecturer."""
+    db = get_db()
+    try:
+        data = request.json or {}
+        name = data.get('name', '').strip()
+        employee_id = data.get('employee_id', '').strip().upper()
+        department = data.get('department', '').strip()
+        phone = data.get('phone', '').strip()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+
+        if not all([name, employee_id, department]):
+            return jsonify({'error': 'Name, employee ID, and department are required.'}), 400
+
+        existing = db.query(Lecturer).filter(Lecturer.employee_id == employee_id).first()
+        if existing:
+            return jsonify({'error': f'Employee ID {employee_id} already exists.'}), 409
+
+        pwd_hash = hashlib.sha256(password.encode()).hexdigest() if password else hashlib.sha256(employee_id.encode()).hexdigest()
+
+        lecturer = Lecturer(
+            name=name,
+            employee_id=employee_id,
+            department=department,
+            phone=phone or None,
+            email=email or None,
+            password=pwd_hash
+        )
+        db.add(lecturer)
+        db.commit()
+        return jsonify({'success': True, 'lecturer': lecturer.to_dict(), 'message': f'Lecturer {name} created successfully.'})
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/lecturers', methods=['GET'])
+def get_lecturers():
+    """List all lecturers."""
+    db = get_db()
+    try:
+        department = request.args.get('department')
+        query = db.query(Lecturer)
+        if department and department != 'All':
+            query = query.filter(Lecturer.department == department)
+        lecturers = query.order_by(Lecturer.name).all()
+        return jsonify([l.to_dict() for l in lecturers])
+    finally:
+        db.close()
+
+
+@app.route('/api/lecturers/<int:lecturer_id>', methods=['PUT'])
+def update_lecturer(lecturer_id):
+    """Update a lecturer's details."""
+    db = get_db()
+    try:
+        lecturer = db.query(Lecturer).filter(Lecturer.id == lecturer_id).first()
+        if not lecturer:
+            return jsonify({'error': 'Lecturer not found.'}), 404
+
+        data = request.json or {}
+        if 'name' in data: lecturer.name = data['name'].strip()
+        if 'department' in data: lecturer.department = data['department'].strip()
+        if 'phone' in data: lecturer.phone = data['phone'].strip() or None
+        if 'email' in data: lecturer.email = data['email'].strip() or None
+        if 'password' in data and data['password']:
+            lecturer.password = hashlib.sha256(data['password'].encode()).hexdigest()
+
+        db.commit()
+        return jsonify({'success': True, 'lecturer': lecturer.to_dict()})
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/lecturers/<int:lecturer_id>', methods=['DELETE'])
+def delete_lecturer(lecturer_id):
+    """Delete a lecturer."""
+    db = get_db()
+    try:
+        lecturer = db.query(Lecturer).filter(Lecturer.id == lecturer_id).first()
+        if not lecturer:
+            return jsonify({'error': 'Lecturer not found.'}), 404
+        db.delete(lecturer)
+        db.commit()
+        return jsonify({'message': f'Lecturer {lecturer.name} deleted successfully.'})
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/auth/lecturer-login', methods=['POST'])
 def lecturer_login():
     """Authenticate a lecturer."""

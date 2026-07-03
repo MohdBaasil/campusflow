@@ -638,6 +638,7 @@
     <!-- Tabs -->
     <div class="login-tabs">
       <button class="login-tab active" id="tab-staff" onclick="switchTab('staff')">🛡️ Staff Login</button>
+      <button class="login-tab" id="tab-lecturer" onclick="switchTab('lecturer')">👩‍🏫 Lecturer Login</button>
       <button class="login-tab" id="tab-student" onclick="switchTab('student')">🎓 Student Portal</button>
     </div>
 
@@ -659,6 +660,76 @@
         </button>
         <div style="text-align:center; margin-top:14px; font-size:11px; color:var(--text-muted);">
           Default: admin / admin123
+        </div>
+      </div>
+
+      <!-- ═══ LECTURER TAB ═══ -->
+      <div class="tab-pane" id="pane-lecturer">
+        <!-- Sub-toggle: Login / Register -->
+        <div class="sub-toggle">
+          <button class="sub-toggle-btn active" id="sub-lecturer-login" onclick="switchLecturerView('login')">🔑 Login</button>
+          <button class="sub-toggle-btn" id="sub-lecturer-register" onclick="switchLecturerView('register')">📝 New Registration</button>
+        </div>
+
+        <!-- Lecturer Login View -->
+        <div id="lecturer-login-view">
+          <div class="form-group">
+            <label class="form-label" for="lecturer-user">Employee ID</label>
+            <input class="form-control" type="text" id="lecturer-user" placeholder="Enter lecturer ID (e.g. lecturer1)" style="text-transform:uppercase;" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="lecturer-pass">Password</label>
+            <input class="form-control" type="password" id="lecturer-pass" placeholder="Enter password" />
+          </div>
+          <button class="btn btn-primary" id="lecturer-login-btn" onclick="lecturerLogin()" style="width:100%;margin-top:8px;">
+            🔐 Login as Lecturer
+          </button>
+          <div style="text-align:center; margin-top:14px; font-size:11px; color:var(--text-muted);">
+            Default: lecturer1 / password123
+          </div>
+        </div>
+
+        <!-- Lecturer Registration View -->
+        <div id="lecturer-register-view" style="display:none;">
+          <div class="form-group">
+            <label class="form-label" for="lect-reg-name">Full Name</label>
+            <input class="form-control" type="text" id="lect-reg-name" placeholder="Enter full name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="lect-reg-id">Employee ID</label>
+            <input class="form-control" type="text" id="lect-reg-id" placeholder="Create Employee ID (e.g. LECTURER2)" style="text-transform:uppercase;" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="lect-reg-dept">Department</label>
+            <select class="form-control" id="lect-reg-dept">
+              <option value="">— Select Department —</option>
+              <option>CSE - AIML</option>
+              <option>Computer Science</option>
+              <option>Electronics Engineering</option>
+              <option>Mechanical Engineering</option>
+              <option>Civil Engineering</option>
+              <option>BBA</option>
+              <option>Mathematics</option>
+              <option>Physics</option>
+              <option>Chemistry</option>
+              <option>Management</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="lect-reg-email">Email Address</label>
+            <input class="form-control" type="email" id="lect-reg-email" placeholder="Enter email address" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="lect-reg-phone">Phone Number</label>
+            <input class="form-control" type="text" id="lect-reg-phone" placeholder="Enter phone number" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="lect-reg-pwd">Create Password</label>
+            <input class="form-control" type="password" id="lect-reg-pwd" placeholder="Enter password" />
+          </div>
+          <button class="btn btn-primary" id="lecturer-register-btn" onclick="registerLecturer()" style="width:100%;margin-top:8px;">
+            📝 Register as Staff
+          </button>
         </div>
       </div>
 
