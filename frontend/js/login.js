@@ -17,9 +17,6 @@ function switchTab(tab) {
   if (tab === 'student') {
     switchStudentView('login');
   }
-  if (tab === 'lecturer') {
-    switchLecturerView('login');
-  }
 }
 
 function switchStudentView(view) {
