@@ -16,7 +16,7 @@ let timerInterval = null;
 document.addEventListener('DOMContentLoaded', () => {
   if (!sessionId) {
     toast('❌ No active session ID provided.', 'error');
-    setTimeout(() => { window.location.href = 'lecturer_dashboard.html'; }, 2000);
+    setTimeout(() => { window.location.href = 'index.html'; }, 2000);
     return;
   }
   
@@ -59,7 +59,7 @@ async function fetchSessionDetails() {
       clearInterval(pollInterval);
       clearInterval(timerInterval);
       setTimeout(() => {
-        window.location.href = 'lecturer_dashboard.html';
+        window.location.href = 'index.html';
       }, 3000);
     }
     
@@ -206,7 +206,7 @@ async function pollCheckins() {
       clearInterval(pollInterval);
       clearInterval(timerInterval);
       alert(`🎉 Session ended automatically!\n\nAll unmarked students have been marked as absent and notified.`);
-      window.location.href = 'lecturer_dashboard.html';
+      window.location.href = 'index.html';
       return;
     }
     
@@ -348,7 +348,7 @@ async function endSession() {
     
     if (data.success) {
       alert(`🎉 Session closed successfully!\n\n${data.message}`);
-      window.location.href = 'lecturer_dashboard.html';
+      window.location.href = 'index.html';
     } else {
       toast(`❌ Error: ${data.error}`, 'error');
       btn.disabled = false;

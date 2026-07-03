@@ -135,7 +135,7 @@ async function lecturerLogin() {
       toast('✅ Login successful! Redirecting...', 'success');
       const urlParams = new URLSearchParams(window.location.search);
       const redirectUrl = urlParams.get('redirect');
-      setTimeout(() => { window.location.href = redirectUrl ? decodeURIComponent(redirectUrl) : 'lecturer_dashboard.html'; }, 600);
+      setTimeout(() => { window.location.href = redirectUrl ? decodeURIComponent(redirectUrl) : 'index.html'; }, 600);
     } else {
       showAlert(`❌ ${data.error}`, 'error');
     }
@@ -698,7 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
   if (userType === 'lecturer') {
-    window.location.href = 'lecturer_dashboard.html';
+    window.location.href = 'index.html';
     return;
   }
   if (userType === 'student') {

@@ -638,7 +638,7 @@
     <!-- Tabs -->
     <div class="login-tabs">
       <button class="login-tab active" id="tab-staff" onclick="switchTab('staff')">🛡️ Staff Login</button>
-      <button class="login-tab" id="tab-lecturer" onclick="switchTab('lecturer')">👩‍🏫 Lecturer Login</button>
+      
       <button class="login-tab" id="tab-student" onclick="switchTab('student')">🎓 Student Portal</button>
     </div>
 
@@ -661,33 +661,34 @@
         <div style="text-align:center; margin-top:14px; font-size:11px; color:var(--text-muted);">
           Default: admin / admin123
         </div>
+
+        <!-- Divider -->
+        <div style="display:flex; align-items:center; gap:12px; margin:20px 0 16px;">
+          <div style="flex:1; height:1px; background:var(--border);"></div>
+          <span style="font-size:11px; color:var(--text-muted); font-weight:600;">OR LOGIN AS LECTURER</span>
+          <div style="flex:1; height:1px; background:var(--border);"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="lecturer-user">Lecturer Employee ID</label>
+          <input class="form-control" type="text" id="lecturer-user" placeholder="Enter lecturer ID (e.g. LECTURER1)" style="text-transform:uppercase;" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="lecturer-pass">Lecturer Password</label>
+          <input class="form-control" type="password" id="lecturer-pass" placeholder="Enter lecturer password" />
+        </div>
+        <button class="btn btn-outline" id="lecturer-login-btn" onclick="lecturerLogin()" style="width:100%;margin-top:8px;">
+          👩‍🏫 Login as Lecturer
+        </button>
+        <div style="text-align:center; margin-top:8px; font-size:11px; color:var(--text-muted);">
+          Default: LECTURER1 / password123
+        </div>
       </div>
-
-      <!-- ═══ LECTURER TAB ═══ -->
-      <div class="tab-pane" id="pane-lecturer">
-        <!-- Sub-toggle: Login / Register -->
-        <div class="sub-toggle">
-          <button class="sub-toggle-btn active" id="sub-lecturer-login" onclick="switchLecturerView('login')">🔑 Login</button>
-          <button class="sub-toggle-btn" id="sub-lecturer-register" onclick="switchLecturerView('register')">📝 New Registration</button>
-        </div>
-
-        <!-- Lecturer Login View -->
-        <div id="lecturer-login-view">
-          <div class="form-group">
-            <label class="form-label" for="lecturer-user">Employee ID</label>
-            <input class="form-control" type="text" id="lecturer-user" placeholder="Enter lecturer ID (e.g. lecturer1)" style="text-transform:uppercase;" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="lecturer-pass">Password</label>
-            <input class="form-control" type="password" id="lecturer-pass" placeholder="Enter password" />
-          </div>
-          <button class="btn btn-primary" id="lecturer-login-btn" onclick="lecturerLogin()" style="width:100%;margin-top:8px;">
-            🔐 Login as Lecturer
-          </button>
-          <div style="text-align:center; margin-top:14px; font-size:11px; color:var(--text-muted);">
-            Default: lecturer1 / password123
-          </div>
-        </div>
+      
+      <!-- Removed: Lecturer Registration in its own tab -->
+      <!-- Lecturer registration placeholder to keep old IDs working -->
+      <div id="pane-lecturer" style="display:none;">
+        <div id="lecturer-login-view" style="display:none;"></div>
 
         <!-- Lecturer Registration View -->
         <div id="lecturer-register-view" style="display:none;">
