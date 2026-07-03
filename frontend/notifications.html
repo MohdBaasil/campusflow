@@ -85,50 +85,7 @@
 
 <div class="layout">
   <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-logo">
-        <div class="brand-icon">🏫</div>
-        <div>
-          <div class="brand-name">CMS Portal</div>
-          <div class="brand-sub">Lecturer Console</div>
-        </div>
-      </div>
-    </div>
-    
-    <nav class="sidebar-nav">
-      <div class="nav-section-label">Main Menu</div>
-      <a href="lecturer_dashboard.html" class="nav-item">
-        <span class="nav-icon">📊</span>
-        <span>Dashboard</span>
-      </a>
-      <a href="lecturer_dashboard.html" class="nav-item">
-        <span class="nav-icon">👩‍🏫</span><span>Lecturer Portal</span>
-      </a>
-      <a href="class_session.html" class="nav-item">
-        <span class="nav-icon">🎥</span>
-        <span>Live Session</span>
-      </a>
-      <a href="internal_marks.html" class="nav-item">
-        <span class="nav-icon">📝</span>
-        <span>Internal Marks</span>
-      </a>
-      <a href="attendance_report.html" class="nav-item">
-        <span class="nav-icon">📈</span>
-        <span>Attendance Report</span>
-      </a>
-      <a href="notifications.html" class="nav-item active">
-        <span class="nav-icon">🔔</span>
-        <span>Notifications</span>
-      </a>
-    </nav>
-    
-    <div class="sidebar-footer">
-      <button class="btn btn-outline btn-sm" onclick="logout()" style="width:100%;">
-        🚪 Logout
-      </button>
-    </div>
-  </aside>
+  <div id="sidebar-placeholder"></div>
 
   <!-- Main Content -->
   <main class="main-content">
@@ -231,10 +188,127 @@
   // Auth control
   document.addEventListener('DOMContentLoaded', () => {
     const userType = localStorage.getItem('user_type');
-    if (userType !== 'lecturer' && userType !== 'staff') {
-      window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+    if (userType !== 'staff' && userType !== 'lecturer') {
+      window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
+      return;
     }
+    renderDynamicSidebar('nav-notifications');
   });
+
+  
+function renderDynamicSidebar(activePageId) {
+  const userType = localStorage.getItem('user_type');
+  const placeholder = document.getElementById('sidebar-placeholder');
+  if (!placeholder) return;
+  
+  if (userType === 'staff') {
+    placeholder.outerHTML = `
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <div class="brand-icon">🎓</div>
+        <div>
+          <div class="brand-name">CampusFlow</div>
+          <div class="brand-sub">ArcFace Face Recognition</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a href="index.html" class="nav-item" id="nav-dashboard">
+        <span class="nav-icon">📊</span><span>Dashboard</span>
+      </a>
+      <div class="nav-section-label">Manage</div>
+      <a href="register.html" class="nav-item" id="nav-register">
+        <span class="nav-icon">👤</span><span>Register Student</span>
+      </a>
+      <a href="students.html" class="nav-item" id="nav-students">
+        <span class="nav-icon">👥</span><span>View Students</span>
+      </a>
+      <a href="enroll.html" class="nav-item" id="nav-enroll">
+        <span class="nav-icon">🤳</span><span>Enroll Face</span>
+      </a>
+      <a href="reports.html" class="nav-item" id="nav-reports">
+        <span class="nav-icon">📋</span><span>Reports</span>
+      </a>
+      <div class="nav-section-label">College System</div>
+      <a href="lecturer_dashboard.html" class="nav-item" id="nav-lecturer-portal">
+        <span class="nav-icon">👩‍🏫</span><span>Lecturer Portal</span>
+      </a>
+      <a href="attendance.html" class="nav-item" id="nav-take-attendance">
+        <span class="nav-icon">📷</span><span>Take Attendance</span>
+      </a>
+      <a href="qrcodes.html" class="nav-item" id="nav-qr-attendance">
+        <span class="nav-icon">📱</span><span>QR Attendance</span>
+      </a>
+      <a href="internal_marks.html" class="nav-item" id="nav-internal-marks">
+        <span class="nav-icon">📝</span><span>Internal Marks</span>
+      </a>
+      <a href="attendance_report.html" class="nav-item" id="nav-attendance-report">
+        <span class="nav-icon">📈</span><span>Attendance Reports</span>
+      </a>
+      <a href="notifications.html" class="nav-item" id="nav-notifications">
+        <span class="nav-icon">🔔</span><span>Notifications</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="status-badge">
+        <div class="status-dot"></div>
+        <span>Server Online</span>
+      </div>
+      <button class="btn btn-outline btn-sm" style="width:100%; margin-top:10px;" onclick="logout()">
+        🚪 Logout
+      </button>
+    </div>
+  </aside>`;
+  } else {
+    placeholder.outerHTML = `
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <div class="brand-icon">🏫</div>
+        <div>
+          <div class="brand-name">CMS Portal</div>
+          <div class="brand-sub">Lecturer Console</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main Menu</div>
+      <a href="lecturer_dashboard.html" class="nav-item" id="nav-lecturer-dashboard">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="class_session.html" class="nav-item" id="nav-live-session">
+        <span class="nav-icon">🎥</span>
+        <span>Live Session</span>
+      </a>
+      <a href="internal_marks.html" class="nav-item" id="nav-internal-marks">
+        <span class="nav-icon">📝</span>
+        <span>Internal Marks</span>
+      </a>
+      <a href="attendance_report.html" class="nav-item" id="nav-attendance-report">
+        <span class="nav-icon">📈</span>
+        <span>Attendance Report</span>
+      </a>
+      <a href="notifications.html" class="nav-item" id="nav-notifications">
+        <span class="nav-icon">🔔</span>
+        <span>Notifications</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-outline btn-sm" onclick="logout()" style="width:100%;">
+        🚪 Logout
+      </button>
+    </div>
+  </aside>`;
+  }
+  
+  const activeEl = document.getElementById(activePageId);
+  if (activeEl) {
+    activeEl.classList.add('active');
+  }
+}
 
   function logout() {
     localStorage.clear();

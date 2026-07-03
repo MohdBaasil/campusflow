@@ -11,32 +11,44 @@
 <div class="layout">
 
   <!-- Sidebar -->
-  <aside class="sidebar">
+    <aside class="sidebar">
     <div class="sidebar-brand">
       <div class="brand-logo">
         <div class="brand-icon">🎓</div>
-        <div><div class="brand-name">CampusFlow</div><div class="brand-sub">ArcFace Face Recognition</div></div>
+        <div>
+          <div class="brand-name">CampusFlow</div>
+          <div class="brand-sub">ArcFace Face Recognition</div>
+        </div>
       </div>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section-label">Navigation</div>
-      <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span>Dashboard</span></a>
+      <a href="index.html" class="nav-item">
+        <span class="nav-icon">📊</span><span>Dashboard</span>
+      </a>
       <div class="nav-section-label">Manage</div>
-      <a href="register.html" class="nav-item"><span class="nav-icon">👤</span><span>Register Student</span></a>
-      <a href="students.html" class="nav-item"><span class="nav-icon">👥</span><span>View Students</span></a>
-      <a href="enroll.html" class="nav-item active"><span class="nav-icon">🤳</span><span>Enroll Face</span></a>
-      <a href="reports.html" class="nav-item"><span class="nav-icon">📋</span><span>Reports</span></a>
+      <a href="register.html" class="nav-item">
+        <span class="nav-icon">👤</span><span>Register Student</span>
+      </a>
+      <a href="students.html" class="nav-item">
+        <span class="nav-icon">👥</span><span>View Students</span>
+      </a>
+      <a href="enroll.html" class="nav-item active">
+        <span class="nav-icon">🤳</span><span>Enroll Face</span>
+      </a>
+      <a href="reports.html" class="nav-item">
+        <span class="nav-icon">📋</span><span>Reports</span>
+      </a>
       <div class="nav-section-label">College System</div>
-      
       <a href="lecturer_dashboard.html" class="nav-item">
         <span class="nav-icon">👩‍🏫</span><span>Lecturer Portal</span>
       </a>
       <a href="attendance.html" class="nav-item">
-          <span class="nav-icon">📷</span><span>Take Attendance</span>
-        </a>
-        <a href="qrcodes.html" class="nav-item">
-          <span class="nav-icon">📱</span><span>QR Attendance</span>
-        </a>
+        <span class="nav-icon">📷</span><span>Take Attendance</span>
+      </a>
+      <a href="qrcodes.html" class="nav-item">
+        <span class="nav-icon">📱</span><span>QR Attendance</span>
+      </a>
       <a href="internal_marks.html" class="nav-item">
         <span class="nav-icon">📝</span><span>Internal Marks</span>
       </a>
@@ -48,9 +60,11 @@
       </a>
     </nav>
     <div class="sidebar-footer">
-      <div class="status-badge"><div class="status-dot"></div><span>Server Online</span></div>
-      <button class="btn btn-outline btn-sm" style="width:100%; margin-top:10px;" 
-              onclick="localStorage.clear(); window.location.href='login.html';">
+      <div class="status-badge">
+        <div class="status-dot"></div>
+        <span>Server Online</span>
+      </div>
+      <button class="btn btn-outline btn-sm" style="width:100%; margin-top:10px;" onclick="logout()">
         🚪 Logout
       </button>
     </div>
