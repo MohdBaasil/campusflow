@@ -17,9 +17,7 @@ function switchTab(tab) {
   if (tab === 'student') {
     switchStudentView('login');
   }
-  if (tab === 'lecturer') {
-    switchLecturerView('login');
-  }
+  
 }
 
 function switchStudentView(view) {
@@ -102,111 +100,6 @@ async function staffLogin() {
   } finally {
     btn.disabled = false;
     btn.innerHTML = '🔐 Login as Staff';
-  }
-}
-
-
-// ─── Lecturer Login ─────────────────────────────
-async function lecturerLogin() {
-  const employeeId = document.getElementById('lecturer-user').value.trim().toUpperCase();
-  const password = document.getElementById('lecturer-pass').value;
-
-  if (!employeeId || !password) {
-    showAlert('⚠️ Please enter both Employee ID and password.', 'warning');
-    return;
-  }
-
-  const btn = document.getElementById('lecturer-login-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Logging in...';
-
-  try {
-    const res = await fetch(`${API}/api/auth/lecturer-login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ employee_id: employeeId, password: password })
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      localStorage.setItem('session_token', data.token);
-      localStorage.setItem('user_type', data.user_type);
-      localStorage.setItem('user_data', JSON.stringify(data.user_data));
-      toast('✅ Login successful! Redirecting...', 'success');
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirectUrl = urlParams.get('redirect');
-      setTimeout(() => { window.location.href = redirectUrl ? decodeURIComponent(redirectUrl) : 'lecturer_dashboard.html'; }, 600);
-    } else {
-      showAlert(`❌ ${data.error}`, 'error');
-    }
-  } catch (err) {
-    showAlert('❌ Cannot connect to server. Make sure the backend is running.', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '🔐 Login as Lecturer';
-  }
-}
-
-// ─── Lecturer Registration ────────────────────────
-function switchLecturerView(view) {
-  clearAlert();
-  document.getElementById('sub-lecturer-login').classList.toggle('active', view === 'login');
-  document.getElementById('sub-lecturer-register').classList.toggle('active', view === 'register');
-  document.getElementById('lecturer-login-view').style.display = view === 'login' ? 'block' : 'none';
-  document.getElementById('lecturer-register-view').style.display = view === 'register' ? 'block' : 'none';
-}
-
-async function registerLecturer() {
-  const name = document.getElementById('lect-reg-name').value.trim();
-  const employeeId = document.getElementById('lect-reg-id').value.trim().toUpperCase();
-  const department = document.getElementById('lect-reg-dept').value;
-  const email = document.getElementById('lect-reg-email').value.trim();
-  const phone = document.getElementById('lect-reg-phone').value.trim();
-  const password = document.getElementById('lect-reg-pwd').value;
-
-  if (!name || !employeeId || !department || !password) {
-    showAlert('⚠️ Name, Employee ID, Department, and Password are required.', 'warning');
-    return;
-  }
-
-  const btn = document.getElementById('lecturer-register-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Registering...';
-
-  try {
-    const res = await fetch(`${API}/api/lecturers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name,
-        employee_id: employeeId,
-        department,
-        email,
-        phone,
-        password
-      })
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      toast('✅ Registration successful! Please log in.', 'success');
-      // Clear fields
-      document.getElementById('lect-reg-name').value = '';
-      document.getElementById('lect-reg-id').value = '';
-      document.getElementById('lect-reg-dept').value = '';
-      document.getElementById('lect-reg-email').value = '';
-      document.getElementById('lect-reg-phone').value = '';
-      document.getElementById('lect-reg-pwd').value = '';
-      // Switch to login
-      switchLecturerView('login');
-    } else {
-      showAlert(`❌ ${data.error}`, 'error');
-    }
-  } catch (err) {
-    showAlert('❌ Cannot connect to server. Make sure the backend is running.', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '📝 Register as Staff';
   }
 }
 
@@ -697,10 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'index.html';
     return;
   }
-  if (userType === 'lecturer') {
-    window.location.href = 'lecturer_dashboard.html';
-    return;
-  }
+  
   if (userType === 'student') {
     window.location.href = redirectUrl ? decodeURIComponent(redirectUrl) : 'student.html';
     return;
@@ -719,11 +609,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') studentPasswordLogin();
   });
 
-  // Enter key for lecturer login
-  document.getElementById('lecturer-pass').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') lecturerLogin();
-  });
-  document.getElementById('lecturer-user').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') lecturerLogin();
-  });
+  
+  
 });
