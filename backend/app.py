@@ -290,8 +290,8 @@ def verify_smile():
     smile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_smile.xml')
     smiles = smile_cascade.detectMultiScale(
         face_roi,
-        scaleFactor=1.7,
-        minNeighbors=22,
+        scaleFactor=1.5,
+        minNeighbors=15,
         minSize=(25, 25)
     )
 
