@@ -39,6 +39,12 @@ from backend.notification_service import (
 
 ACTIVE_SESSIONS = {}
 
+# ── Cross-server sync config ──
+# Set PEER_SERVER_URL env var to the other server's base URL for automatic sync.
+# Local → points to HuggingFace. HuggingFace → points to nothing (or local if tunneled).
+SYNC_PEER_URL = os.environ.get('PEER_SERVER_URL', 'https://mhdbaasil-campusflow.hf.space')
+SYNC_SECRET   = os.environ.get('SYNC_SECRET', 'campusflow_sync_2026')
+
 # ── Auth constants ──
 STAFF_CREDENTIALS = {
     'admin': hashlib.sha256('admin123'.encode()).hexdigest()
@@ -392,6 +398,8 @@ def register_portal():
         generate_student_qr(student.id, student.roll_number)
 
         db.commit()
+        # Sync to peer server (HuggingFace) in background
+        sync_student_to_peer(student.id)
         return jsonify({
             'success': True,
             'message': f'Student {name} registered successfully with {saved_faces} face photo(s).',
@@ -419,6 +427,130 @@ def encode_image(frame):
     _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
     encoded = base64.b64encode(buffer).decode('utf-8')
     return f'data:image/jpeg;base64,{encoded}'
+
+
+# ─────────────────────────────────────────────
+# CROSS-SERVER STUDENT SYNC
+# ─────────────────────────────────────────────
+
+def sync_student_to_peer(student_id: int):
+    """
+    Called in a background thread after a student is registered locally.
+    Sends the student's data + face embeddings to the peer server (HuggingFace).
+    """
+    import threading, requests as _req
+
+    def _do_sync():
+        if not SYNC_PEER_URL:
+            return
+        try:
+            db2 = get_db()
+            student = db2.query(Student).filter(Student.id == student_id).first()
+            if not student:
+                db2.close()
+                return
+            embs = db2.query(FaceEmbedding).filter(FaceEmbedding.student_id == student_id).all()
+            embeddings_b64 = [base64.b64encode(e.embedding).decode('utf-8') for e in embs]
+            payload = {
+                'secret': SYNC_SECRET,
+                'name': student.name,
+                'roll_number': student.roll_number,
+                'department': student.department,
+                'phone': student.phone or '',
+                'email': student.email or '',
+                'semester': student.semester or '',
+                'embeddings_b64': embeddings_b64
+            }
+            db2.close()
+            resp = _req.post(
+                f'{SYNC_PEER_URL}/api/sync/student',
+                json=payload,
+                timeout=30
+            )
+            print(f"[Sync] Pushed student {student.name} to peer → {resp.status_code}: {resp.text[:120]}")
+        except Exception as e:
+            print(f"[Sync] Failed to push student to peer: {e}")
+
+    threading.Thread(target=_do_sync, daemon=True).start()
+
+
+@app.route('/api/sync/student', methods=['POST'])
+def sync_student_receive():
+    """
+    Receives a student registration from the peer server and imports it locally.
+    Protected by a shared secret token.
+    """
+    data = request.json or {}
+    if data.get('secret') != SYNC_SECRET:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    roll = (data.get('roll_number') or '').strip().upper()
+    name = (data.get('name') or '').strip()
+    if not roll or not name:
+        return jsonify({'error': 'roll_number and name are required'}), 400
+
+    db = get_db()
+    try:
+        # Skip if already exists
+        existing = db.query(Student).filter(Student.roll_number == roll).first()
+        if existing:
+            # Update embeddings if new ones provided
+            new_embs = data.get('embeddings_b64', [])
+            added = 0
+            existing_count = db.query(FaceEmbedding).filter(FaceEmbedding.student_id == existing.id).count()
+            if new_embs and existing_count < len(new_embs):
+                # Clear and reimport to avoid duplicates
+                db.query(FaceEmbedding).filter(FaceEmbedding.student_id == existing.id).delete()
+                for emb_b64 in new_embs:
+                    emb_bytes = base64.b64decode(emb_b64)
+                    db.add(FaceEmbedding(student_id=existing.id, embedding=emb_bytes))
+                    added += 1
+                db.commit()
+            return jsonify({'status': 'skipped', 'message': f'Student {roll} already exists. Embeddings updated: {added}'}), 200
+
+        # Create student
+        student = Student(
+            name=name,
+            roll_number=roll,
+            department=data.get('department', ''),
+            phone=data.get('phone', ''),
+            email=data.get('email', ''),
+            semester=data.get('semester', '')
+        )
+        db.add(student)
+        db.flush()
+
+        # Import face embeddings
+        saved_embs = 0
+        for emb_b64 in data.get('embeddings_b64', []):
+            try:
+                emb_bytes = base64.b64decode(emb_b64)
+                arr = np.frombuffer(emb_bytes, dtype=np.float32)
+                if arr.shape[0] == 512:
+                    db.add(FaceEmbedding(student_id=student.id, embedding=emb_bytes))
+                    saved_embs += 1
+            except Exception:
+                pass
+
+        db.commit()
+        print(f"[Sync] Imported student {name} ({roll}) with {saved_embs} embeddings from peer.")
+
+        # Retrain model in background
+        def _retrain():
+            try:
+                success, msg, _ = train_model()
+                print(f"[Sync] Model retrained after import: {msg}")
+            except Exception as e:
+                print(f"[Sync] Retrain failed: {e}")
+        import threading
+        threading.Thread(target=_retrain, daemon=True).start()
+
+        return jsonify({'status': 'imported', 'student': student.to_dict(), 'embeddings': saved_embs}), 201
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
 
 
 # ─────────────────────────────────────────────
@@ -562,6 +694,8 @@ def register_student():
         generate_student_qr(student.id, student.roll_number)
 
         db.commit()
+        # Sync to peer server (HuggingFace) in background
+        sync_student_to_peer(student.id)
         return jsonify({
             'message': f'Student {name} registered successfully with {saved_count} face images.',
             'student': student.to_dict(),
