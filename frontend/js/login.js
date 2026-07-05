@@ -37,7 +37,7 @@ function switchStudentView(view) {
     stopStuLoginCamera();
   } else {
     stopRegCamera();
-    switchStudentLoginMode('password');
+    switchStudentLoginMode('face');  // Default to face login
   }
 }
 
@@ -210,7 +210,7 @@ async function registerLecturer() {
 
 // ─── Student Login Modes & Camera ────────────────
 let stuLoginStream = null;
-let uploadedStuLoginImageData = null;
+let _faceIdentifyResult = null;  // Holds the last successful identify response
 
 function switchStudentLoginMode(mode) {
   clearAlert();
@@ -218,12 +218,14 @@ function switchStudentLoginMode(mode) {
   const passBtn = document.getElementById('btn-stu-pass-login');
   const facePane = document.getElementById('stu-face-login-pane');
   const passPane = document.getElementById('stu-pass-login-pane');
-  
+
   if (mode === 'face') {
     faceBtn.classList.add('active');
     passBtn.classList.remove('active');
     facePane.style.display = 'block';
     passPane.style.display = 'none';
+    // Reset to step 1 and open camera
+    showFaceStep(1);
     startStuLoginCamera();
   } else {
     passBtn.classList.add('active');
@@ -234,58 +236,44 @@ function switchStudentLoginMode(mode) {
   }
 }
 
-function handleStuLoginFileUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    uploadedStuLoginImageData = e.target.result;
-
-    // Stop camera streaming and hide video
-    stopStuLoginCamera();
-
-    const video = document.getElementById('stu-login-video');
-    const preview = document.getElementById('stu-login-uploaded-preview');
-    const camBox = document.getElementById('stu-login-cam-box');
-    
-    if (camBox) camBox.style.display = 'block';
-    if (video) video.style.display = 'none';
-    if (preview) {
-      preview.src = uploadedStuLoginImageData;
-      preview.style.display = 'block';
-    }
-
-    document.getElementById('stu-login-cam-status').textContent = '📁 Photo Uploaded: ' + file.name;
-    toast('📷 Photo file loaded! Click Scan Face & Login to verify.', 'info');
-  };
-  reader.readAsDataURL(file);
+function showFaceStep(step) {
+  const step1 = document.getElementById('face-step-1');
+  const step3 = document.getElementById('face-step-3');
+  if (step === 1) {
+    if (step1) step1.style.display = 'block';
+    if (step3) step3.style.display = 'none';
+  } else if (step === 3) {
+    if (step1) step1.style.display = 'none';
+    if (step3) step3.style.display = 'block';
+    document.getElementById('face-match-success').style.display = 'none';
+    document.getElementById('face-match-fail').style.display = 'none';
+  }
 }
 
 async function startStuLoginCamera() {
-  uploadedStuLoginImageData = null;
   const video = document.getElementById('stu-login-video');
-  const preview = document.getElementById('stu-login-uploaded-preview');
-  if (video) video.style.display = 'block';
-  if (preview) {
-    preview.src = '';
-    preview.style.display = 'none';
-  }
-  if (stuLoginStream) return;
   const camBox = document.getElementById('stu-login-cam-box');
-  camBox.style.display = 'block';
-  
+  const statusEl = document.getElementById('stu-login-cam-status');
+  const captureBtn = document.getElementById('btn-face-identify');
+
+  if (camBox) camBox.style.display = 'block';
+  if (stuLoginStream) {
+    if (captureBtn) captureBtn.disabled = false;
+    return;
+  }
+
   try {
     stuLoginStream = await navigator.mediaDevices.getUserMedia({
       video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
     });
     video.srcObject = stuLoginStream;
     video.style.transform = 'scaleX(-1)';
-    document.getElementById('stu-login-cam-status').textContent = '🟢 Camera Active';
+    if (statusEl) statusEl.textContent = '🟢 Camera Active — Look straight ahead';
+    if (captureBtn) captureBtn.disabled = false;
   } catch (err) {
     console.error('Login Camera error:', err);
-    showAlert('❌ Cannot access camera. Please grant camera permission.', 'error');
-    document.getElementById('stu-login-cam-status').textContent = '❌ Camera Error';
+    showAlert('❌ Cannot access camera. Please grant camera permission or use Password Login.', 'error');
+    if (statusEl) statusEl.textContent = '❌ Camera Error';
   }
 }
 
@@ -297,69 +285,112 @@ function stopStuLoginCamera() {
   const video = document.getElementById('stu-login-video');
   if (video) video.srcObject = null;
   const camBox = document.getElementById('stu-login-cam-box');
-  if (!uploadedStuLoginImageData && camBox) camBox.style.display = 'none';
+  if (camBox) camBox.style.display = 'none';
 }
 
-// ─── Student Face Login ──────────────────────────
-async function studentFaceLogin() {
+// ─── Face Identify Login (NEW — no roll number needed) ───
+async function faceIdentifyLogin() {
   clearAlert();
-  const roll = document.getElementById('stu-roll').value.trim().toUpperCase();
-  if (!roll) {
-    showAlert('⚠️ Please enter your Roll Number first.', 'warning');
-    return;
-  }
 
   const video = document.getElementById('stu-login-video');
   const canvas = document.getElementById('stu-login-canvas');
-  
-  let imageData = null;
-  if (uploadedStuLoginImageData) {
-    imageData = uploadedStuLoginImageData;
-  } else {
-    if (!stuLoginStream || video.readyState < 2) {
-      toast('📷 Camera not ready. Please wait...', 'warning');
-      return;
-    }
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
-    imageData = canvas.toDataURL('image/jpeg', 0.85);
+  const overlay = document.getElementById('face-scan-overlay');
+  const btn = document.getElementById('btn-face-identify');
+
+  if (!stuLoginStream || video.readyState < 2) {
+    toast('📷 Camera not ready. Please wait...', 'warning');
+    return;
   }
 
-  const btn = document.getElementById('btn-stu-face-scan');
+  // Capture frame
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+  // Mirror-correct the captured image (video is CSS-mirrored)
+  ctx.save();
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, -canvas.width, 0);
+  ctx.restore();
+  const imageData = canvas.toDataURL('image/jpeg', 0.90);
+
+  // Show scanning overlay (Step 2)
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Verifying Face...';
+  btn.innerHTML = '<span class="spinner"></span> Scanning...';
+  if (overlay) { overlay.style.display = 'flex'; }
 
   try {
-    const res = await fetch(`${API}/api/auth/login-face`, {
+    const res = await fetch(`${API}/api/auth/face-identify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roll_number: roll, image: imageData })
+      body: JSON.stringify({ image: imageData })
     });
     const data = await res.json();
 
+    // Hide overlay
+    if (overlay) overlay.style.display = 'none';
+
     if (data.success) {
-      localStorage.setItem('session_token', data.token);
-      localStorage.setItem('user_type', data.user_type);
-      localStorage.setItem('user_data', JSON.stringify(data.user_data));
-      toast('✅ Face matched successfully!', 'success');
-      stopStuLoginCamera();
-      
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirectUrl = urlParams.get('redirect');
+      // Store result for confirmFaceLogin()
+      _faceIdentifyResult = data;
+
+      // Show success card (Step 3)
+      showFaceStep(3);
+      const s = data.user_data;
+      const initials = s.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      document.getElementById('result-avatar').textContent = initials;
+      document.getElementById('result-name').textContent = s.name;
+      document.getElementById('result-roll').textContent = s.roll_number;
+      document.getElementById('result-dept').textContent = s.department;
+
+      // Animate confidence bar
+      const pct = data.confidence_pct;
+      document.getElementById('result-conf-pct').textContent = `${pct}%`;
       setTimeout(() => {
-        window.location.href = redirectUrl ? decodeURIComponent(redirectUrl) : 'student_dashboard.html';
-      }, 600);
+        document.getElementById('result-conf-bar').style.width = `${Math.min(pct, 100)}%`;
+      }, 100);
+
+      document.getElementById('face-match-success').style.display = 'block';
     } else {
-      showAlert(`❌ ${data.error}`, 'error');
+      // Show failure card (Step 3)
+      _faceIdentifyResult = null;
+      showFaceStep(3);
+      document.getElementById('face-fail-msg').textContent = data.error || 'Face not recognized.';
+      document.getElementById('face-match-fail').style.display = 'block';
     }
   } catch (err) {
-    showAlert('❌ Server connection error.', 'error');
+    if (overlay) overlay.style.display = 'none';
+    showAlert('❌ Server connection error. Make sure the backend is running.', 'error');
+    console.error(err);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '🤳 Scan Face & Login';
+    btn.innerHTML = '🤳 Capture & Identify';
   }
+}
+
+function confirmFaceLogin() {
+  if (!_faceIdentifyResult || !_faceIdentifyResult.success) return;
+  const data = _faceIdentifyResult;
+  localStorage.setItem('session_token', data.token);
+  localStorage.setItem('user_type', data.user_type);
+  localStorage.setItem('user_data', JSON.stringify(data.user_data));
+  toast('✅ Face matched! Logging in...', 'success');
+  stopStuLoginCamera();
+  const urlParams = new URLSearchParams(window.location.search);
+  const redirectUrl = urlParams.get('redirect');
+  setTimeout(() => {
+    window.location.href = redirectUrl ? decodeURIComponent(redirectUrl) : 'student_dashboard.html';
+  }, 600);
+}
+
+function retryFaceIdentify() {
+  _faceIdentifyResult = null;
+  showFaceStep(1);
+  // Reset confidence bar
+  const bar = document.getElementById('result-conf-bar');
+  if (bar) bar.style.width = '0%';
+  clearAlert();
+  // Restart camera if it stopped
+  if (!stuLoginStream) startStuLoginCamera();
 }
 
 // ─── Student Password Login ──────────────────────
@@ -711,16 +742,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') staffLogin();
   });
 
-  // Enter key for student login
-  document.getElementById('stu-pass').addEventListener('keydown', (e) => {
+  // Enter key for student password login
+  const stuPass = document.getElementById('stu-pass');
+  if (stuPass) stuPass.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') studentPasswordLogin();
-  });
-
-  // Enter key for lecturer login
-  document.getElementById('lecturer-pass').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') lecturerLogin();
-  });
-  document.getElementById('lecturer-user').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') lecturerLogin();
   });
 });

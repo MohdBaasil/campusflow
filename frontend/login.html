@@ -677,41 +677,97 @@
         <!-- Student Login -->
         <div id="student-login-view">
           <div style="display:flex; gap:8px; margin-bottom:16px;">
-            <button class="sub-toggle-btn" id="btn-stu-face-login" onclick="switchStudentLoginMode('face')" style="padding: 8px; font-size: 12px;">🤳 Face Login</button>
-            <button class="sub-toggle-btn active" id="btn-stu-pass-login" onclick="switchStudentLoginMode('password')" style="padding: 8px; font-size: 12px;">🔑 Password Login</button>
+            <button class="sub-toggle-btn active" id="btn-stu-face-login" onclick="switchStudentLoginMode('face')" style="padding: 8px; font-size: 12px;">🤳 Face Login</button>
+            <button class="sub-toggle-btn" id="btn-stu-pass-login" onclick="switchStudentLoginMode('password')" style="padding: 8px; font-size: 12px;">🔑 Password Login</button>
           </div>
 
-          <!-- Face Login Pane -->
+          <!-- ═══ FACE IDENTIFY PANE ═══ -->
           <div id="stu-face-login-pane" style="display:none;">
-            <div class="form-group">
-              <label class="form-label" for="stu-roll">Roll Number / USN</label>
-              <input class="form-control" type="text" id="stu-roll" placeholder="e.g. 23BTRCL110" style="text-transform:uppercase;" />
-            </div>
-            
-            <div class="camera-box" style="margin-top: 14px; display: none;" id="stu-login-cam-box">
-              <video id="stu-login-video" autoplay muted playsinline></video>
-              <canvas id="stu-login-canvas" style="display:none;"></canvas>
-              <img id="stu-login-uploaded-preview" style="display: none; width: 100%; height: 100%; object-fit: cover;" />
-              <div class="camera-overlay">
-                <div class="scan-line"></div>
-                <div class="camera-corner corner-tl"></div>
-                <div class="camera-corner corner-tr"></div>
-                <div class="camera-corner corner-bl"></div>
-                <div class="camera-corner corner-br"></div>
+
+            <!-- STEP 1: Camera -->
+            <div id="face-step-1">
+              <p style="font-size:12px; color:var(--text-muted); text-align:center; margin-bottom:12px;">
+                Look straight at the camera — the system will identify you automatically.
+              </p>
+
+              <div class="camera-box" id="stu-login-cam-box" style="display:none; position:relative;">
+                <video id="stu-login-video" autoplay muted playsinline></video>
+                <canvas id="stu-login-canvas" style="display:none;"></canvas>
+
+                <!-- Scanning overlay (shown during step 2) -->
+                <div id="face-scan-overlay" style="display:none; position:absolute; inset:0; background:rgba(10,10,30,0.7); display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; border-radius:12px;">
+                  <div style="width:64px; height:64px; border:3px solid var(--purple); border-top-color:transparent; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+                  <div style="font-size:13px; font-weight:600; color:var(--purple);">Identifying face...</div>
+                </div>
+
+                <div class="camera-overlay">
+                  <div class="scan-line"></div>
+                  <div class="camera-corner corner-tl"></div>
+                  <div class="camera-corner corner-tr"></div>
+                  <div class="camera-corner corner-bl"></div>
+                  <div class="camera-corner corner-br"></div>
+                </div>
+                <div class="camera-status" id="stu-login-cam-status">📷 Starting camera...</div>
               </div>
-              <div class="camera-status" id="stu-login-cam-status">📷 Camera ready</div>
+
+              <button class="btn btn-primary" id="btn-face-identify" onclick="faceIdentifyLogin()" style="width:100%; margin-top:12px;" disabled>
+                🤳 Capture & Identify
+              </button>
+
+              <div style="text-align:center; margin-top:10px; font-size:11px; color:var(--text-muted);">
+                No roll number needed — your face is your ID
+              </div>
             </div>
 
-            <button class="btn btn-primary" id="btn-stu-face-scan" onclick="studentFaceLogin()" style="width:100%;margin-top:8px;">
-              🤳 Scan Face & Login
-            </button>
+            <!-- STEP 3: Result Card (shown after scan) -->
+            <div id="face-step-3" style="display:none;">
+              <!-- Success card -->
+              <div id="face-match-success" style="display:none;">
+                <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:16px; padding:20px; text-align:center; margin-bottom:16px;">
+                  <div style="font-size:36px; margin-bottom:8px;">✅</div>
+                  <div style="font-size:11px; font-weight:700; color:var(--green); letter-spacing:1px; margin-bottom:16px;">IDENTITY CONFIRMED</div>
 
-            <!-- File upload fallback -->
-            <div style="text-align: center; margin-top: 12px;">
-              <span style="font-size: 12px; color: var(--text-muted);">Camera not working? </span>
-              <button class="btn btn-outline btn-sm" onclick="document.getElementById('stu-login-file-input').click()" style="padding: 4px 8px; font-size: 11px;">Upload Photo File</button>
-              <input type="file" id="stu-login-file-input" accept="image/*" style="display: none;" onchange="handleStuLoginFileUpload(event)" />
+                  <!-- Avatar -->
+                  <div id="result-avatar" style="width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg,var(--purple),var(--blue)); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; color:#fff; margin:0 auto 12px;"></div>
+
+                  <div id="result-name" style="font-size:18px; font-weight:800; color:var(--text-primary); margin-bottom:4px;"></div>
+                  <div id="result-roll" style="font-size:12px; color:var(--text-muted); margin-bottom:4px;"></div>
+                  <div id="result-dept" style="font-size:12px; color:var(--purple); font-weight:600; margin-bottom:14px;"></div>
+
+                  <!-- Confidence bar -->
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+                    <span style="font-size:11px; color:var(--text-muted); white-space:nowrap;">Match</span>
+                    <div style="flex:1; height:6px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+                      <div id="result-conf-bar" style="height:100%; background:linear-gradient(90deg,var(--green),var(--blue)); border-radius:4px; transition:width 0.6s ease; width:0%;"></div>
+                    </div>
+                    <span id="result-conf-pct" style="font-size:12px; font-weight:700; color:var(--green); white-space:nowrap;"></span>
+                  </div>
+
+                  <button class="btn btn-primary" onclick="confirmFaceLogin()" style="width:100%;">
+                    → Login as this student
+                  </button>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="retryFaceIdentify()" style="width:100%;">
+                  🔄 Not you? Try again
+                </button>
+              </div>
+
+              <!-- Failure card -->
+              <div id="face-match-fail" style="display:none;">
+                <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:16px; padding:20px; text-align:center; margin-bottom:16px;">
+                  <div style="font-size:36px; margin-bottom:8px;">❌</div>
+                  <div style="font-size:13px; font-weight:700; color:#ef4444; margin-bottom:8px;">Face Not Recognized</div>
+                  <div id="face-fail-msg" style="font-size:12px; color:var(--text-muted);"></div>
+                </div>
+                <button class="btn btn-primary" onclick="retryFaceIdentify()" style="width:100%; margin-bottom:8px;">
+                  🔄 Try Again
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="switchStudentLoginMode('password')" style="width:100%;">
+                  🔑 Use Password Instead
+                </button>
+              </div>
             </div>
+
           </div>
 
           <!-- Password Login Pane -->

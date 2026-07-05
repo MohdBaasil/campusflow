@@ -268,6 +268,104 @@ def login_face():
         db.close()
 
 
+# ─────────────────────────────────────────────────────────
+# FACE-IDENTIFY LOGIN — No roll number needed
+# Compares face against ALL stored embeddings to find match
+# ─────────────────────────────────────────────────────────
+@app.route('/api/auth/face-identify', methods=['POST'])
+def face_identify_login():
+    """
+    Face-first student login. No roll number required.
+    Steps:
+      1. Receive base64 image
+      2. Extract ArcFace 512-dim embedding
+      3. Cosine-compare against every stored FaceEmbedding in DB
+      4. Return best-matching student if similarity >= threshold
+      5. Issue session token
+    """
+    data = request.json or {}
+    image_data = data.get('image')
+
+    if not image_data:
+        return jsonify({'success': False, 'error': 'No image provided.'}), 400
+
+    frame = decode_image(image_data)
+    if frame is None:
+        return jsonify({'success': False, 'error': 'Invalid image format.'}), 400
+
+    # Extract embedding from the captured face
+    embedding, bbox = detector.preprocess_for_training(frame)
+    if embedding is None:
+        return jsonify({'success': False, 'error': 'No face detected. Please ensure good lighting and look directly at the camera.'}), 400
+
+    # L2-normalize the embedding for consistent cosine similarity
+    emb_norm = np.linalg.norm(embedding)
+    if emb_norm > 0:
+        embedding = embedding / emb_norm
+
+    THRESHOLD = 0.40   # Minimum cosine similarity to accept a match
+    best_student_id = None
+    best_similarity = -1.0
+
+    db = get_db()
+    try:
+        all_embeddings = db.query(FaceEmbedding).all()
+        if not all_embeddings:
+            return jsonify({'success': False, 'error': 'No face data found in system. Please register first.'}), 404
+
+        # Compare against every stored embedding
+        similarity_map = {}   # student_id -> max_similarity
+        for emb_record in all_embeddings:
+            stored = np.frombuffer(emb_record.embedding, dtype=np.float32)
+            stored_norm = np.linalg.norm(stored)
+            if stored_norm > 0:
+                stored = stored / stored_norm
+
+            sim = float(np.dot(embedding, stored))
+            sid = emb_record.student_id
+            if sid not in similarity_map or sim > similarity_map[sid]:
+                similarity_map[sid] = sim
+
+        # Pick the student with the highest similarity
+        if similarity_map:
+            best_student_id = max(similarity_map, key=similarity_map.get)
+            best_similarity = similarity_map[best_student_id]
+
+        if best_student_id is None or best_similarity < THRESHOLD:
+            return jsonify({
+                'success': False,
+                'error': f'No matching student found. Best match was {round(best_similarity * 100, 1)}% (minimum {int(THRESHOLD*100)}% required).',
+                'best_confidence': round(best_similarity, 4)
+            }), 401
+
+        # Load matched student
+        student = db.query(Student).filter(Student.id == best_student_id).first()
+        if not student:
+            return jsonify({'success': False, 'error': 'Matched student record not found.'}), 404
+
+        # Issue session token
+        token = str(uuid.uuid4())
+        ACTIVE_TOKENS[token] = {
+            'user_type': 'student',
+            'user_data': student.to_dict(),
+            'created_at': datetime.now().isoformat()
+        }
+
+        return jsonify({
+            'success': True,
+            'token': token,
+            'user_type': 'student',
+            'user_data': student.to_dict(),
+            'confidence': round(best_similarity, 4),
+            'confidence_pct': round(best_similarity * 100, 1)
+        })
+
+    except Exception as e:
+        print(f'[FaceIdentify] Error: {e}')
+        return jsonify({'success': False, 'error': f'Server error: {str(e)}'}), 500
+    finally:
+        db.close()
+
 
 @app.route('/api/auth/verify-smile', methods=['POST'])
 def verify_smile():
