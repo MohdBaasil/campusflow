@@ -647,19 +647,72 @@
 
       <!-- ═══ STAFF TAB ═══ -->
       <div class="tab-pane active" id="pane-staff">
-        <div class="form-group">
-          <label class="form-label" for="staff-user">Username</label>
-          <input class="form-control" type="text" id="staff-user" placeholder="Enter admin username" autocomplete="username" />
+        
+        <!-- Sub-toggle: Login / Register -->
+        <div class="sub-toggle">
+          <button class="sub-toggle-btn active" id="sub-staff-login" onclick="switchStaffView('login')">🔑 Login</button>
+          <button class="sub-toggle-btn" id="sub-staff-register" onclick="switchStaffView('register')">📝 Register</button>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="staff-pass">Password</label>
-          <input class="form-control" type="password" id="staff-pass" placeholder="Enter password" autocomplete="current-password" />
+
+        <!-- Staff Login View -->
+        <div id="staff-login-view">
+          <div class="form-group">
+            <label class="form-label" for="staff-user">Username / ID</label>
+            <input class="form-control" type="text" id="staff-user" placeholder="Enter admin username or staff ID" autocomplete="username" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="staff-pass">Password</label>
+            <input class="form-control" type="password" id="staff-pass" placeholder="Enter password" autocomplete="current-password" />
+          </div>
+          <button class="btn btn-primary" id="staff-login-btn" onclick="staffLogin()" style="width:100%;margin-top:8px;">
+            🔐 Login as Staff
+          </button>
+          <div style="text-align:center; margin-top:14px; font-size:11px; color:var(--text-muted);">
+            Default Admin: admin / admin123
+          </div>
         </div>
-        <button class="btn btn-primary" id="staff-login-btn" onclick="staffLogin()" style="width:100%;margin-top:8px;">
-          🔐 Login as Staff
-        </button>
-        <div style="text-align:center; margin-top:14px; font-size:11px; color:var(--text-muted);">
-          Default: admin / admin123
+
+        <!-- Staff Registration View -->
+        <div id="staff-register-view" style="display:none;">
+          <div class="form-group">
+            <label class="form-label" for="staff-reg-name">Full Name</label>
+            <input class="form-control" type="text" id="staff-reg-name" placeholder="Enter full name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="staff-reg-id">Employee ID</label>
+            <input class="form-control" type="text" id="staff-reg-id" placeholder="Create Employee ID (e.g. LECTURER2)" style="text-transform:uppercase;" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="staff-reg-dept">Department</label>
+            <select class="form-control" id="staff-reg-dept">
+              <option value="">— Select Department —</option>
+              <option>CSE - AIML</option>
+              <option>Computer Science</option>
+              <option>Electronics Engineering</option>
+              <option>Mechanical Engineering</option>
+              <option>Civil Engineering</option>
+              <option>BBA</option>
+              <option>Mathematics</option>
+              <option>Physics</option>
+              <option>Chemistry</option>
+              <option>Management</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="staff-reg-email">Email Address</label>
+            <input class="form-control" type="email" id="staff-reg-email" placeholder="Enter email address" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="staff-reg-phone">Phone Number</label>
+            <input class="form-control" type="text" id="staff-reg-phone" placeholder="Enter phone number" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="staff-reg-pwd">Create Password</label>
+            <input class="form-control" type="password" id="staff-reg-pwd" placeholder="Enter password" />
+          </div>
+          <button class="btn btn-primary" id="staff-register-btn" onclick="registerStaff()" style="width:100%;margin-top:8px;">
+            📝 Register as Staff
+          </button>
         </div>
       </div>
 

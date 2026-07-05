@@ -17,6 +17,9 @@ function switchTab(tab) {
   if (tab === 'student') {
     switchStudentView('login');
   }
+  if (tab === 'staff') {
+    switchStaffView('login');
+  }
 }
 
 function switchStudentView(view) {
@@ -40,6 +43,69 @@ function switchStudentView(view) {
     switchStudentLoginMode('face');  // Default to face login
   }
 }
+
+function switchStaffView(view) {
+  clearAlert();
+  document.getElementById('sub-staff-login').classList.toggle('active', view === 'login');
+  document.getElementById('sub-staff-register').classList.toggle('active', view === 'register');
+  document.getElementById('staff-login-view').style.display = view === 'login' ? 'block' : 'none';
+  document.getElementById('staff-register-view').style.display = view === 'register' ? 'block' : 'none';
+}
+
+async function registerStaff() {
+  const name = document.getElementById('staff-reg-name').value.trim();
+  const employeeId = document.getElementById('staff-reg-id').value.trim().toUpperCase();
+  const department = document.getElementById('staff-reg-dept').value;
+  const email = document.getElementById('staff-reg-email').value.trim();
+  const phone = document.getElementById('staff-reg-phone').value.trim();
+  const password = document.getElementById('staff-reg-pwd').value;
+
+  if (!name || !employeeId || !department || !password) {
+    showAlert('⚠️ Name, Employee ID, Department, and Password are required.', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('staff-register-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Registering...';
+
+  try {
+    const res = await fetch(`${API}/api/lecturers`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        employee_id: employeeId,
+        department,
+        email,
+        phone,
+        password
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      toast('✅ Registration successful! Please log in.', 'success');
+      // Clear fields
+      document.getElementById('staff-reg-name').value = '';
+      document.getElementById('staff-reg-id').value = '';
+      document.getElementById('staff-reg-dept').value = '';
+      document.getElementById('staff-reg-email').value = '';
+      document.getElementById('staff-reg-phone').value = '';
+      document.getElementById('staff-reg-pwd').value = '';
+      // Switch to login
+      switchStaffView('login');
+    } else {
+      showAlert(`❌ ${data.error}`, 'error');
+    }
+  } catch (err) {
+    showAlert('❌ Cannot connect to server. Make sure the backend is running.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '📝 Register as Staff';
+  }
+}
+
 
 
 // ─── Alerts & Toasts ─────────────────────────────
@@ -102,110 +168,6 @@ async function staffLogin() {
   }
 }
 
-
-// ─── Lecturer Login ─────────────────────────────
-async function lecturerLogin() {
-  const employeeId = document.getElementById('lecturer-user').value.trim().toUpperCase();
-  const password = document.getElementById('lecturer-pass').value;
-
-  if (!employeeId || !password) {
-    showAlert('⚠️ Please enter both Employee ID and password.', 'warning');
-    return;
-  }
-
-  const btn = document.getElementById('lecturer-login-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Logging in...';
-
-  try {
-    const res = await fetch(`${API}/api/auth/lecturer-login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ employee_id: employeeId, password: password })
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      localStorage.setItem('session_token', data.token);
-      localStorage.setItem('user_type', data.user_type);
-      localStorage.setItem('user_data', JSON.stringify(data.user_data));
-      toast('✅ Login successful! Redirecting...', 'success');
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirectUrl = urlParams.get('redirect');
-      setTimeout(() => { window.location.href = redirectUrl ? decodeURIComponent(redirectUrl) : 'index.html'; }, 600);
-    } else {
-      showAlert(`❌ ${data.error}`, 'error');
-    }
-  } catch (err) {
-    showAlert('❌ Cannot connect to server. Make sure the backend is running.', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '🔐 Login as Lecturer';
-  }
-}
-
-// ─── Lecturer Registration ────────────────────────
-function switchLecturerView(view) {
-  clearAlert();
-  document.getElementById('sub-lecturer-login').classList.toggle('active', view === 'login');
-  document.getElementById('sub-lecturer-register').classList.toggle('active', view === 'register');
-  document.getElementById('lecturer-login-view').style.display = view === 'login' ? 'block' : 'none';
-  document.getElementById('lecturer-register-view').style.display = view === 'register' ? 'block' : 'none';
-}
-
-async function registerLecturer() {
-  const name = document.getElementById('lect-reg-name').value.trim();
-  const employeeId = document.getElementById('lect-reg-id').value.trim().toUpperCase();
-  const department = document.getElementById('lect-reg-dept').value;
-  const email = document.getElementById('lect-reg-email').value.trim();
-  const phone = document.getElementById('lect-reg-phone').value.trim();
-  const password = document.getElementById('lect-reg-pwd').value;
-
-  if (!name || !employeeId || !department || !password) {
-    showAlert('⚠️ Name, Employee ID, Department, and Password are required.', 'warning');
-    return;
-  }
-
-  const btn = document.getElementById('lecturer-register-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Registering...';
-
-  try {
-    const res = await fetch(`${API}/api/lecturers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name,
-        employee_id: employeeId,
-        department,
-        email,
-        phone,
-        password
-      })
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      toast('✅ Registration successful! Please log in.', 'success');
-      // Clear fields
-      document.getElementById('lect-reg-name').value = '';
-      document.getElementById('lect-reg-id').value = '';
-      document.getElementById('lect-reg-dept').value = '';
-      document.getElementById('lect-reg-email').value = '';
-      document.getElementById('lect-reg-phone').value = '';
-      document.getElementById('lect-reg-pwd').value = '';
-      // Switch to login
-      switchLecturerView('login');
-    } else {
-      showAlert(`❌ ${data.error}`, 'error');
-    }
-  } catch (err) {
-    showAlert('❌ Cannot connect to server. Make sure the backend is running.', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '📝 Register as Staff';
-  }
-}
 
 
 // ─── Student Login Modes & Camera ────────────────

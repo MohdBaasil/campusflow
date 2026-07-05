@@ -151,6 +151,7 @@ def auth_login():
         password = data.get('password', '')
         pwd_hash = hashlib.sha256(password.encode()).hexdigest()
 
+        # Check static Admin credentials first
         expected = STAFF_CREDENTIALS.get(username)
         if expected and pwd_hash == expected:
             token = str(uuid.uuid4())
@@ -165,6 +166,29 @@ def auth_login():
                 'user_type': 'staff',
                 'user_data': {'username': username}
             })
+
+        # Check database Lecturers table as fallback
+        db = get_db()
+        try:
+            lecturer = db.query(Lecturer).filter(Lecturer.employee_id == username.upper()).first()
+            if lecturer and lecturer.password == pwd_hash:
+                token = str(uuid.uuid4())
+                ACTIVE_TOKENS[token] = {
+                    'user_type': 'lecturer',
+                    'user_data': lecturer.to_dict(),
+                    'created_at': datetime.now().isoformat()
+                }
+                return jsonify({
+                    'success': True,
+                    'token': token,
+                    'user_type': 'lecturer',
+                    'user_data': lecturer.to_dict()
+                })
+        except Exception as e:
+            print(f"[Auth] Lecturer query error: {e}")
+        finally:
+            db.close()
+
         return jsonify({'success': False, 'error': 'Invalid staff credentials.'}), 401
 
     elif login_type == 'student':
@@ -644,6 +668,90 @@ def sync_student_receive():
         threading.Thread(target=_retrain, daemon=True).start()
 
         return jsonify({'status': 'imported', 'student': student.to_dict(), 'embeddings': saved_embs}), 201
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+# ─────────────────────────────────────────────
+# CROSS-SERVER LECTURER SYNC
+# ─────────────────────────────────────────────
+
+def sync_lecturer_to_peer(lecturer_id: int):
+    """
+    Called in a background thread after a lecturer is registered locally.
+    Sends the lecturer's data to the peer server (HuggingFace).
+    """
+    import threading, requests as _req
+
+    def _do_sync():
+        if not SYNC_PEER_URL:
+            return
+        try:
+            db2 = get_db()
+            lecturer = db2.query(Lecturer).filter(Lecturer.id == lecturer_id).first()
+            if not lecturer:
+                db2.close()
+                return
+            payload = {
+                'secret': SYNC_SECRET,
+                'name': lecturer.name,
+                'employee_id': lecturer.employee_id,
+                'department': lecturer.department,
+                'phone': lecturer.phone or '',
+                'email': lecturer.email or '',
+                'password': lecturer.password  # Send the hashed password directly
+            }
+            db2.close()
+            resp = _req.post(
+                f'{SYNC_PEER_URL}/api/sync/lecturer',
+                json=payload,
+                timeout=30
+            )
+            print(f"[Sync] Pushed lecturer {lecturer.name} to peer → {resp.status_code}: {resp.text[:120]}")
+        except Exception as e:
+            print(f"[Sync] Failed to push lecturer to peer: {e}")
+
+    threading.Thread(target=_do_sync, daemon=True).start()
+
+
+@app.route('/api/sync/lecturer', methods=['POST'])
+def sync_lecturer_receive():
+    """
+    Receives a lecturer registration from the peer server and imports it locally.
+    Protected by a shared secret token.
+    """
+    data = request.json or {}
+    if data.get('secret') != SYNC_SECRET:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    employee_id = (data.get('employee_id') or '').strip().upper()
+    name = (data.get('name') or '').strip()
+    if not employee_id or not name:
+        return jsonify({'error': 'employee_id and name are required'}), 400
+
+    db = get_db()
+    try:
+        # Skip if already exists
+        existing = db.query(Lecturer).filter(Lecturer.employee_id == employee_id).first()
+        if existing:
+            return jsonify({'status': 'skipped', 'message': f'Lecturer {employee_id} already exists.'}), 200
+
+        # Create lecturer
+        lecturer = Lecturer(
+            name=name,
+            employee_id=employee_id,
+            department=data.get('department', ''),
+            phone=data.get('phone', '') or None,
+            email=data.get('email', '') or None,
+            password=data.get('password')  # Already hashed
+        )
+        db.add(lecturer)
+        db.commit()
+        print(f"[Sync] Imported lecturer {name} ({employee_id}) from peer.")
+        return jsonify({'status': 'imported', 'lecturer': lecturer.to_dict()}), 201
     except Exception as e:
         db.rollback()
         return jsonify({'error': str(e)}), 500
@@ -1892,6 +2000,7 @@ def create_lecturer():
         )
         db.add(lecturer)
         db.commit()
+        sync_lecturer_to_peer(lecturer.id)
         return jsonify({'success': True, 'lecturer': lecturer.to_dict(), 'message': f'Lecturer {name} created successfully.'})
     except Exception as e:
         db.rollback()
