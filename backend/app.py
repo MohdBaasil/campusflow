@@ -30,6 +30,7 @@ from backend.face_recognition.insightface_detector import InsightFaceDetector
 from backend.face_recognition.insightface_recognizer import InsightFaceRecognizer
 from backend.database.migration import run_migration
 from backend.database.migration_v2 import run_migration_v2
+from backend.database.migration_seed_students import run_seed_migration
 from backend.face_recognition.trainer import train_model
 from backend.notification_service import (
     notify_absence, notify_low_attendance,
@@ -104,6 +105,7 @@ def generate_student_qr(student_id, roll_number):
 init_db()
 run_migration()
 run_migration_v2()
+run_seed_migration()  # Sync student registrations from seed_students.json
 detector = InsightFaceDetector()
 recognizer = InsightFaceRecognizer()
 
@@ -236,7 +238,7 @@ def login_face():
             if similarity > max_similarity:
                 max_similarity = similarity
 
-        THRESHOLD = 0.55
+        THRESHOLD = 0.40
         verified = bool(max_similarity >= THRESHOLD)
 
         if not verified:
@@ -361,8 +363,10 @@ def register_portal():
                 img_path = os.path.join(student_dir, f'face_{face_labels[i]}.jpg')
                 cv2.imwrite(img_path, frame)
 
+                # L2-normalize embedding for consistent cosine similarity
+                embedding_norm = embedding / (np.linalg.norm(embedding) + 1e-10)
                 # Save embedding
-                embedding_bytes = embedding.astype(np.float32).tobytes()
+                embedding_bytes = embedding_norm.astype(np.float32).tobytes()
                 face_emb = FaceEmbedding(student_id=student.id, embedding=embedding_bytes)
                 db.add(face_emb)
                 saved_faces += 1
