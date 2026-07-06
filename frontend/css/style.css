@@ -1024,3 +1024,199 @@ tbody td:first-child { color: var(--text-primary); font-weight: 600; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .workflow-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Manual Attendance Modal ── */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(7, 6, 15, 0.85);
+  backdrop-filter: blur(12px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+.modal-container {
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card), 0 0 40px rgba(139, 92, 246, 0.15);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(30px);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+.modal-overlay.active .modal-container {
+  transform: translateY(0);
+}
+.modal-header {
+  padding: 22px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255,255,255,0.01);
+}
+.modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 24px;
+  cursor: pointer;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+}
+.modal-close:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--purple);
+}
+.modal-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.modal-session-info {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  font-size: 13px;
+}
+.modal-session-info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.modal-session-info-row:last-child {
+  margin-bottom: 0;
+}
+.modal-search {
+  position: relative;
+}
+.modal-search input {
+  width: 100%;
+}
+.modal-student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.modal-student-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+.modal-student-item:hover {
+  background: rgba(139,92,246,0.04);
+  border-color: rgba(139,92,246,0.15);
+}
+.modal-student-item.present {
+  border-left: 3px solid var(--green);
+  background: rgba(16,185,129,0.03);
+}
+.modal-student-item.absent {
+  border-left: 3px solid var(--red);
+  background: rgba(239,68,68,0.03);
+}
+.modal-student-info {
+  display: flex;
+  flex-direction: column;
+}
+.modal-student-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.modal-student-roll {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.modal-student-status {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.modal-student-actions {
+  display: flex;
+  align-items: center;
+}
+.modal-footer {
+  padding: 18px 28px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(255,255,255,0.01);
+}
+
+/* Custom Toggle Switch Pill */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(255,255,255,0.08);
+  border: 1px solid var(--border);
+  transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 24px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text-secondary);
+  transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+}
+.switch input:checked + .slider {
+  background: var(--grad-purple);
+  border-color: var(--purple);
+}
+.switch input:checked + .slider:before {
+  transform: translateX(22px);
+  background-color: var(--text-primary);
+}

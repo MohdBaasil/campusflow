@@ -171,6 +171,7 @@ class Subject(Base):
     code = Column(String, unique=True, nullable=False)
     name = Column(String, nullable=False)
     department = Column(String, nullable=False)
+    specialization = Column(String, nullable=True)
     semester = Column(Integer, nullable=True, default=1)
     credits = Column(Integer, nullable=True, default=3)
     lecturer_id = Column(Integer, ForeignKey('lecturers.id'), nullable=True)
@@ -186,6 +187,7 @@ class Subject(Base):
             'code': self.code,
             'name': self.name,
             'department': self.department,
+            'specialization': self.specialization,
             'semester': self.semester,
             'credits': self.credits,
             'lecturer_id': self.lecturer_id,
@@ -339,6 +341,12 @@ def init_db():
     _migrate_add_columns()
     # ── Migration: set default passwords for existing students ──
     _migrate_default_passwords()
+    # ── Seed curriculum ──
+    try:
+        from backend.database.seed_curriculum import seed_database
+        seed_database()
+    except Exception as e:
+        print(f"[Migration] Error seeding curriculum: {e}")
 
 
 def _migrate_add_columns():
@@ -353,6 +361,7 @@ def _migrate_add_columns():
         ('students', 'year_of_admission', 'INTEGER'),
         ('students', 'attendance_percentage', 'REAL DEFAULT 75.0'),
         ('attendance', 'class_session_id', 'INTEGER'),
+        ('subjects', 'specialization', 'TEXT'),
     ]
     with engine.connect() as conn:
         for table, col, col_type in new_columns:

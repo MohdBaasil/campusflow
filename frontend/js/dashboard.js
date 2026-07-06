@@ -97,9 +97,12 @@ async function loadDashboardData() {
           <td>${s.start_time}</td>
           <td><span class="badge badge-success">Active</span></td>
           <td>
-            <a href="class_session.html?session_id=${s.id}" class="btn btn-primary btn-sm">
+            <a href="class_session.html?session_id=${s.id}" class="btn btn-primary btn-sm" style="margin-right: 8px;">
               📹 Monitor
             </a>
+            <button class="btn btn-outline btn-sm" onclick="openManualAttendanceModal(${s.id})">
+              📋 Override
+            </button>
           </td>
         `;
         activeBody.appendChild(tr);
@@ -128,6 +131,11 @@ async function loadDashboardData() {
           <td>${s.topic_covered || '<span style="color:var(--text-muted);">Not specified</span>'}</td>
           <td>${s.start_time} — ${s.end_time || ''}</td>
           <td><span class="badge badge-blue">${s.attendance_count || 0} Records</span></td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="openManualAttendanceModal(${s.id})">
+              📋 Override
+            </button>
+          </td>
         `;
         recentBody.appendChild(tr);
       });
@@ -261,5 +269,156 @@ async function startNewSession() {
   } finally {
     btn.disabled = false;
     btn.innerHTML = '🎥 Start Live Camera Session';
+  }
+}
+
+// ── Manual Attendance Override Modal ────────────────────────────────
+let currentModalSessionId = null;
+let modalSessionData = null;
+let modalAllStudents = [];
+let modalAttendanceMap = new Map(); // studentId -> status
+
+async function openManualAttendanceModal(sessionId) {
+  currentModalSessionId = sessionId;
+  document.getElementById('modal-search-student').value = '';
+  document.getElementById('modal-student-list-container').innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);"><span class="spinner"></span> Loading students...</div>';
+  
+  // Open modal visual
+  const modal = document.getElementById('attendance-modal');
+  modal.classList.add('active');
+
+  try {
+    // 1. Fetch Session details
+    const sessionRes = await fetch(`${API}/api/class-sessions/${sessionId}`);
+    if (!sessionRes.ok) throw new Error('Failed to load session details.');
+    modalSessionData = await sessionRes.json();
+
+    // Set modal headers
+    document.getElementById('modal-session-subject').textContent = `${modalSessionData.subject_code} — ${modalSessionData.subject_name}`;
+    document.getElementById('modal-session-datetime').textContent = `${modalSessionData.session_type} on ${modalSessionData.date} (${modalSessionData.start_time} - ${modalSessionData.end_time || 'Active'})`;
+
+    // Map existing attendance records
+    modalAttendanceMap.clear();
+    if (modalSessionData.attendance) {
+      modalSessionData.attendance.forEach(rec => {
+        modalAttendanceMap.set(rec.student_id, rec.status);
+      });
+    }
+
+    // 2. Fetch all students
+    const studentsRes = await fetch(`${API}/api/students`);
+    if (!studentsRes.ok) throw new Error('Failed to load student directory.');
+    const students = await studentsRes.json();
+
+    // Filter to session department (same as live class session logic)
+    modalAllStudents = students.filter(s => s.department === modalSessionData.department);
+    if (modalAllStudents.length === 0) {
+      modalAllStudents = students;
+    }
+
+    renderModalStudentChecklist();
+  } catch (err) {
+    console.error(err);
+    toast('❌ Error initializing manual override modal.', 'error');
+    closeManualAttendanceModal();
+  }
+}
+
+function closeManualAttendanceModal() {
+  const modal = document.getElementById('attendance-modal');
+  modal.classList.remove('active');
+  currentModalSessionId = null;
+  modalSessionData = null;
+  modalAllStudents = [];
+  modalAttendanceMap.clear();
+  // Refresh the main dashboard stats and active/recent history records
+  loadDashboardData();
+}
+
+function renderModalStudentChecklist() {
+  const container = document.getElementById('modal-student-list-container');
+  const query = document.getElementById('modal-search-student').value.toLowerCase().trim();
+  
+  // Save current scroll
+  const scrollPos = container.scrollTop;
+  container.innerHTML = '';
+
+  const filtered = modalAllStudents.filter(s => {
+    return !query || s.name.toLowerCase().includes(query) || s.roll_number.toLowerCase().includes(query);
+  });
+
+  let presentCount = 0;
+
+  filtered.forEach(s => {
+    const status = modalAttendanceMap.get(s.id); // 'Present', 'Absent', or undefined
+    const isPresent = status === 'Present';
+    if (isPresent) presentCount++;
+
+    const itemClass = status ? (isPresent ? 'present' : 'absent') : '';
+    const statusText = status 
+      ? (isPresent ? '✅ Present (Manual Override)' : '❌ Absent (Manual Override)')
+      : '⏳ Not Marked / Pending';
+
+    const div = document.createElement('div');
+    div.className = `modal-student-item ${itemClass}`;
+    div.innerHTML = `
+      <div class="modal-student-info">
+        <span class="modal-student-name">${s.name}</span>
+        <span class="modal-student-roll">${s.roll_number} | ${s.department}</span>
+        <span class="modal-student-status" style="color: ${isPresent ? 'var(--green)' : (status === 'Absent' ? 'var(--red)' : 'var(--text-muted)')}">
+          ${statusText}
+        </span>
+      </div>
+      <div class="modal-student-actions">
+        <label class="switch">
+          <input type="checkbox" ${isPresent ? 'checked' : ''} onchange="toggleModalAttendance(this, ${s.id})" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+
+  document.getElementById('modal-session-present-count').textContent = `${presentCount} / ${modalAllStudents.length}`;
+  container.scrollTop = scrollPos;
+}
+
+function filterModalStudents() {
+  renderModalStudentChecklist();
+}
+
+async function toggleModalAttendance(checkbox, studentId) {
+  const markPresent = checkbox.checked;
+  
+  try {
+    const payload = {
+      present_student_ids: markPresent ? [studentId] : [],
+      absent_student_ids: markPresent ? [] : [studentId]
+    };
+
+    const res = await fetch(`${API}/api/class-sessions/${currentModalSessionId}/mark-attendance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      if (markPresent) {
+        modalAttendanceMap.set(studentId, 'Present');
+        toast('✅ Student marked present manually.', 'success');
+      } else {
+        modalAttendanceMap.set(studentId, 'Absent');
+        toast('ℹ️ Student marked absent.', 'info');
+      }
+      renderModalStudentChecklist();
+    } else {
+      checkbox.checked = !markPresent;
+      toast(`❌ Error: ${data.error}`, 'error');
+    }
+  } catch (err) {
+    checkbox.checked = !markPresent;
+    console.error(err);
+    toast('❌ Network error saving override.', 'error');
   }
 }

@@ -206,6 +206,7 @@
                 <th>Topic Covered</th>
                 <th>Time</th>
                 <th>Records</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="recent-sessions-body">
@@ -215,6 +216,46 @@
         </div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- Manual Attendance Modal -->
+<div class="modal-overlay" id="attendance-modal">
+  <div class="modal-container">
+    <div class="modal-header">
+      <h3 class="modal-title">📋 Manual Attendance Override</h3>
+      <button class="modal-close" onclick="closeManualAttendanceModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <!-- Session metadata summary -->
+      <div class="modal-session-info">
+        <div class="modal-session-info-row">
+          <span style="color:var(--text-secondary);">Subject:</span>
+          <span id="modal-session-subject" style="font-weight:700;">-</span>
+        </div>
+        <div class="modal-session-info-row">
+          <span style="color:var(--text-secondary);">Type & Date:</span>
+          <span id="modal-session-datetime" style="font-weight:700;">-</span>
+        </div>
+        <div class="modal-session-info-row">
+          <span style="color:var(--text-secondary);">Present Count:</span>
+          <span id="modal-session-present-count" style="font-weight:700; color:var(--green)">0 / 0</span>
+        </div>
+      </div>
+
+      <!-- Search filter -->
+      <div class="modal-search">
+        <input class="form-control" type="text" id="modal-search-student" placeholder="🔍 Search student name or roll number..." oninput="filterModalStudents()" />
+      </div>
+
+      <!-- Student List -->
+      <div class="modal-student-list" id="modal-student-list-container">
+        <!-- Loaded dynamically -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeManualAttendanceModal()">Close</button>
     </div>
   </div>
 </div>

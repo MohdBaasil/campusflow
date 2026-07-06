@@ -167,11 +167,9 @@ function renderStudentChecklist() {
         </span>
       </div>
       <div class="student-actions">
-        <label class="form-label" style="margin: 0; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-          <input type="checkbox" ${isPresent ? 'checked' : ''} onchange="toggleManualAttendance(this, ${s.id})" style="transform: scale(1.2); cursor: pointer;" />
-          <span style="font-size: 12px; font-weight: 700; color: ${isPresent ? 'var(--green)' : 'var(--text-secondary)'};">
-            ${isPresent ? 'Present' : 'Absent'}
-          </span>
+        <label class="switch">
+          <input type="checkbox" ${isPresent ? 'checked' : ''} onchange="toggleManualAttendance(this, ${s.id})" />
+          <span class="slider"></span>
         </label>
       </div>
     `;

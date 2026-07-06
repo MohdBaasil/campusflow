@@ -2445,6 +2445,7 @@ def mark_session_attendance(session_id):
     Mark attendance for a class session.
     Applies the +1% / -3% attendance percentage formula.
     Sends absence notifications.
+    Supports toggle/update if an attendance record already exists.
     """
     db = get_db()
     try:
@@ -2466,7 +2467,7 @@ def mark_session_attendance(session_id):
 
         results = {'present': [], 'absent': [], 'notifications_sent': 0}
 
-        # Mark PRESENT students (+1%)
+        # Mark PRESENT students (+1% or toggle +4%)
         for student_id in present_ids:
             student = db.query(Student).filter(Student.id == int(student_id)).first()
             if not student:
@@ -2477,39 +2478,65 @@ def mark_session_attendance(session_id):
                 Attendance.student_id == student.id,
                 Attendance.class_session_id == session_id
             ).first()
-            if existing:
-                continue
 
-            # Create attendance record
-            record = Attendance(
-                student_id=student.id,
-                subject=subject_name,
-                date=today,
-                time=now_time,
-                status='Present',
-                confidence='100.0',
-                class_session_id=session_id
-            )
-            db.add(record)
-
-            # Update attendance percentage (+1%, cap at 100)
             old_pct = student.attendance_percentage or 75.0
-            new_pct = min(100.0, old_pct + 1.0)
-            student.attendance_percentage = new_pct
 
-            # Log the change
-            log = AttendancePercentageLog(
-                student_id=student.id,
-                subject_id=session.subject_id,
-                old_percentage=old_pct,
-                new_percentage=new_pct,
-                change_type='+1',
-                class_session_id=session_id
-            )
-            db.add(log)
-            results['present'].append({'id': student.id, 'name': student.name, 'new_pct': round(new_pct, 1)})
+            if existing:
+                if existing.status == 'Present':
+                    # Already present, no change needed
+                    continue
+                else:
+                    # Changing from Absent to Present
+                    existing.status = 'Present'
+                    existing.confidence = '100.0'
+                    existing.time = now_time
+                    existing.date = today
+                    
+                    # Reverse the -3% penalty and apply +1% bonus = +4%
+                    new_pct = min(100.0, old_pct + 4.0)
+                    student.attendance_percentage = new_pct
 
-        # Mark ABSENT students (-3%)
+                    # Log the override
+                    log = AttendancePercentageLog(
+                        student_id=student.id,
+                        subject_id=session.subject_id,
+                        old_percentage=old_pct,
+                        new_percentage=new_pct,
+                        change_type='+4 (override)',
+                        class_session_id=session_id
+                    )
+                    db.add(log)
+            else:
+                # Create brand new attendance record
+                record = Attendance(
+                    student_id=student.id,
+                    subject=subject_name,
+                    date=today,
+                    time=now_time,
+                    status='Present',
+                    confidence='100.0',
+                    class_session_id=session_id
+                )
+                db.add(record)
+
+                # Update attendance percentage (+1%, cap at 100)
+                new_pct = min(100.0, old_pct + 1.0)
+                student.attendance_percentage = new_pct
+
+                # Log the change
+                log = AttendancePercentageLog(
+                    student_id=student.id,
+                    subject_id=session.subject_id,
+                    old_percentage=old_pct,
+                    new_percentage=new_pct,
+                    change_type='+1',
+                    class_session_id=session_id
+                )
+                db.add(log)
+
+            results['present'].append({'id': student.id, 'name': student.name, 'new_pct': round(student.attendance_percentage, 1)})
+
+        # Mark ABSENT students (-3% or toggle -4%)
         for student_id in absent_ids:
             student = db.query(Student).filter(Student.id == int(student_id)).first()
             if not student:
@@ -2520,50 +2547,75 @@ def mark_session_attendance(session_id):
                 Attendance.student_id == student.id,
                 Attendance.class_session_id == session_id
             ).first()
-            if existing:
-                continue
 
-            # Create attendance record with Absent status
-            record = Attendance(
-                student_id=student.id,
-                subject=subject_name,
-                date=today,
-                time=now_time,
-                status='Absent',
-                confidence='0',
-                class_session_id=session_id
-            )
-            db.add(record)
-
-            # Update attendance percentage (-3%, floor at 0)
             old_pct = student.attendance_percentage or 75.0
-            new_pct = max(0.0, old_pct - 3.0)
-            student.attendance_percentage = new_pct
 
-            # Log the change
-            log = AttendancePercentageLog(
-                student_id=student.id,
-                subject_id=session.subject_id,
-                old_percentage=old_pct,
-                new_percentage=new_pct,
-                change_type='-3',
-                class_session_id=session_id
-            )
-            db.add(log)
+            if existing:
+                if existing.status == 'Absent':
+                    # Already absent, no change needed
+                    continue
+                else:
+                    # Changing from Present to Absent
+                    existing.status = 'Absent'
+                    existing.confidence = '0'
+                    existing.time = now_time
+                    existing.date = today
+
+                    # Reverse the +1% bonus and apply -3% penalty = -4%
+                    new_pct = max(0.0, old_pct - 4.0)
+                    student.attendance_percentage = new_pct
+
+                    # Log the override
+                    log = AttendancePercentageLog(
+                        student_id=student.id,
+                        subject_id=session.subject_id,
+                        old_percentage=old_pct,
+                        new_percentage=new_pct,
+                        change_type='-4 (override)',
+                        class_session_id=session_id
+                    )
+                    db.add(log)
+            else:
+                # Create brand new attendance record
+                record = Attendance(
+                    student_id=student.id,
+                    subject=subject_name,
+                    date=today,
+                    time=now_time,
+                    status='Absent',
+                    confidence='0',
+                    class_session_id=session_id
+                )
+                db.add(record)
+
+                # Update attendance percentage (-3%, floor at 0)
+                new_pct = max(0.0, old_pct - 3.0)
+                student.attendance_percentage = new_pct
+
+                # Log the change
+                log = AttendancePercentageLog(
+                    student_id=student.id,
+                    subject_id=session.subject_id,
+                    old_percentage=old_pct,
+                    new_percentage=new_pct,
+                    change_type='-3',
+                    class_session_id=session_id
+                )
+                db.add(log)
 
             # Send absence notification
-            notify_absence(db, student, subject_name, today, new_pct)
+            notify_absence(db, student, subject_name, today, student.attendance_percentage)
             results['notifications_sent'] += 1
 
             # Check low attendance thresholds
-            threshold = notify_low_attendance(db, student, new_pct)
+            threshold = notify_low_attendance(db, student, student.attendance_percentage)
             if threshold:
                 results['notifications_sent'] += 1
 
             results['absent'].append({
                 'id': student.id,
                 'name': student.name,
-                'new_pct': round(new_pct, 1),
+                'new_pct': round(student.attendance_percentage, 1),
                 'notification': True
             })
 
