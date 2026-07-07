@@ -3363,6 +3363,16 @@ def debug_db():
         # Check engine dialect
         dialect_name = db.bind.dialect.name
         
+        # Try manual alter
+        try:
+            from sqlalchemy import text
+            with db.bind.connect() as conn:
+                conn.execute(text("ALTER TABLE subjects ADD COLUMN specialization TEXT"))
+                conn.commit()
+                alter_result = "Success!"
+        except Exception as e:
+            alter_result = f"Failed: {traceback.format_exc()}"
+            
         # Check columns of subjects table via inspector
         inspector = inspect(db.bind)
         subjects_cols = [c['name'] for c in inspector.get_columns('subjects')]
@@ -3380,7 +3390,8 @@ def debug_db():
             'dialect': dialect_name,
             'subjects_columns': subjects_cols,
             'subject_data': subject_data,
-            'subject_error': subject_error
+            'subject_error': subject_error,
+            'alter_result': alter_result
         })
     except Exception as e:
         return jsonify({
