@@ -21,7 +21,8 @@ def run_migration_v2():
         ('students', 'semester', 'INTEGER DEFAULT 1'),
         ('students', 'attendance_percentage', 'REAL DEFAULT 100.0'),
         ('students', 'year_of_admission', 'INTEGER'),
-        ('subjects', 'lecturer_id', 'INTEGER')
+        ('subjects', 'lecturer_id', 'INTEGER'),
+        ('subjects', 'specialization', 'TEXT')
     ]
     
     with engine.connect() as conn:
