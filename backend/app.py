@@ -3353,28 +3353,6 @@ def update_student(student_id):
         db.close()
 
 
-# ── Seed Debug Endpoint ──
-@app.route('/api/debug/seed', methods=['GET'])
-def debug_seed():
-    import sys
-    from io import StringIO
-    from backend.database.seed_curriculum import seed_database
-    
-    # Redirect stdout to capture prints
-    old_stdout = sys.stdout
-    sys.stdout = StringIO()
-    
-    try:
-        seed_database()
-        output = sys.stdout.getvalue()
-        return jsonify({'success': True, 'output': output})
-    except Exception as e:
-        import traceback
-        return jsonify({'success': False, 'error': str(e), 'traceback': traceback.format_exc(), 'output': sys.stdout.getvalue()})
-    finally:
-        sys.stdout = old_stdout
-
-
 # ─────────────────────────────────────────────
 # SERVE FRONTEND
 # ─────────────────────────────────────────────
