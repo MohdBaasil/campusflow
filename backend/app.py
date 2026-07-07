@@ -3353,55 +3353,6 @@ def update_student(student_id):
         db.close()
 
 
-# ── Debug Endpoint ──
-@app.route('/api/debug/db', methods=['GET'])
-def debug_db():
-    import traceback
-    from sqlalchemy import inspect
-    db = get_db()
-    try:
-        # Check engine dialect
-        dialect_name = db.bind.dialect.name
-        
-        # Try manual alter
-        try:
-            from sqlalchemy import text
-            with db.bind.connect() as conn:
-                conn.execute(text("ALTER TABLE subjects ADD COLUMN specialization TEXT"))
-                conn.commit()
-                alter_result = "Success!"
-        except Exception as e:
-            alter_result = f"Failed: {traceback.format_exc()}"
-            
-        # Check columns of subjects table via inspector
-        inspector = inspect(db.bind)
-        subjects_cols = [c['name'] for c in inspector.get_columns('subjects')]
-        
-        # Try query
-        try:
-            first_subject = db.query(Subject).first()
-            subject_data = first_subject.to_dict() if first_subject else None
-            subject_error = None
-        except Exception as e:
-            subject_error = traceback.format_exc()
-            subject_data = None
-            
-        return jsonify({
-            'dialect': dialect_name,
-            'subjects_columns': subjects_cols,
-            'subject_data': subject_data,
-            'subject_error': subject_error,
-            'alter_result': alter_result
-        })
-    except Exception as e:
-        return jsonify({
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }), 500
-    finally:
-        db.close()
-
-
 # ─────────────────────────────────────────────
 # SERVE FRONTEND
 # ─────────────────────────────────────────────
